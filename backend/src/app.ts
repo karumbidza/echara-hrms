@@ -12,6 +12,11 @@ import departmentRoutes from './routes/departmentRoutes';
 const app = express();
 const prisma = new PrismaClient();
 
+// Test database connection
+prisma.$connect()
+  .then(() => console.log('✅ Database connected successfully'))
+  .catch((err) => console.error('❌ Database connection failed:', err));
+
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
