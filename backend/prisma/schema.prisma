@@ -1,0 +1,316 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  currency  String   @default("USD")
+  timezone  String   @default("Africa/Harare")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  users        User[]
+  organizations Organization[]
+  employees    Employee[]
+  departments  Department[]
+  payrollRuns  PayrollRun[]
+  taxTables    TaxTable[]
+  auditLogs    AuditLog[]
+  
+  @@map("tenants")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  fullName  String
+  role      UserRole @default(EMPLOYEE)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  // Audit relations
+  createdPayrollRuns PayrollRun[]
+  auditLogs          AuditLog[]
+  timesheets         Timesheet[]
+  leaves             Leave[]
+  
+  @@map("users")
+}
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  address     String?
+  phone       String?
+  email       String?
+  taxNumber   String?
+  nssaNumber  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  departments Department[]
+  
+  @@map("organizations")
+}
+
+model Department {
+  id        String   @id @default(uuid())
+  name      String
+  code      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  employees Employee[]
+  
+  @@map("departments")
+}
+
+model Employee {
+  id              String   @id @default(uuid())
+  employeeNumber  String   @unique
+  firstName       String
+  lastName        String
+  nationalId      String?
+  dateOfBirth     DateTime?
+  hireDate        DateTime?
+  email           String?
+  phone           String?
+  address         String?
+  
+  // Employment details
+  employmentType  EmploymentType @default(FULL_TIME)
+  jobTitle        String
+  payFrequency    PayFrequency   @default(MONTHLY)
+  basicSalary     Float         @default(0)
+  currency        String        @default("USD")
+  bankName        String?
+  bankAccount     String?
+  nssaNumber      String?
+  
+  // Status
+  isActive      Boolean @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  tenantId     String
+  tenant       Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  
+  payslips     Payslip[]
+  timesheets   Timesheet[]
+  leaves       Leave[]
+  
+  @@map("employees")
+}
+
+model PayrollRun {
+  id           String       @id @default(uuid())
+  periodStart  DateTime
+  periodEnd    DateTime
+  status       PayrollStatus @default(QUEUED)
+  totalGross   Float        @default(0)
+  totalNet     Float        @default(0)
+  runDate      DateTime     @default(now())
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  
+  // Relations
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  createdById String
+  createdBy   User @relation(fields: [createdById], references: [id])
+  
+  payslips Payslip[]
+  
+  @@map("payroll_runs")
+}
+
+model Payslip {
+  id            String   @id @default(uuid())
+  grossSalary   Float    @default(0)
+  basicSalary   Float    @default(0)
+  allowances    Float    @default(0)
+  deductions    Float    @default(0)
+  overtime      Float    @default(0)
+  nssaEmployee  Float    @default(0)
+  nssaEmployer  Float    @default(0)
+  paye          Float    @default(0)
+  aidsLevy      Float    @default(0)
+  netSalary     Float    @default(0)
+  details       Json?    // Breakdown of components
+  pdfPath       String?  // Path to generated PDF
+  isDelivered   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  
+  // Relations
+  payrollRunId String
+  payrollRun   PayrollRun @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
+  
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  
+  @@map("payslips")
+}
+
+model TaxTable {
+  id            String   @id @default(uuid())
+  name          String
+  type          TaxType  @default(PAYE)
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  brackets      Json     // Tax brackets in JSON format
+  createdAt     DateTime @default(now())
+  
+  // Relations
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@map("tax_tables")
+}
+
+model Timesheet {
+  id         String         @id @default(uuid())
+  date       DateTime
+  clockIn    DateTime?
+  clockOut   DateTime?
+  regularHours Float        @default(0)
+  overtimeHours Float       @default(0)
+  status     TimesheetStatus @default(PENDING)
+  notes      String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  
+  // Relations
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  
+  approvedById String?
+  approvedBy   User? @relation(fields: [approvedById], references: [id])
+  
+  @@map("timesheets")
+}
+
+model Leave {
+  id          String      @id @default(uuid())
+  type        LeaveType
+  startDate   DateTime
+  endDate     DateTime
+  reason      String?
+  status      LeaveStatus @default(PENDING)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  // Relations
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  
+  approvedById String?
+  approvedBy   User? @relation(fields: [approvedById], references: [id])
+  
+  @@map("leaves")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  table     String
+  recordId  String
+  oldValues Json?
+  newValues Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  
+  // Relations
+  userId String?
+  user   User? @relation(fields: [userId], references: [id])
+  
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@map("audit_logs")
+}
+
+// Enums
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  PAYROLL_OFFICER
+  MANAGER
+  EMPLOYEE
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  CASUAL
+}
+
+enum PayFrequency {
+  WEEKLY
+  FORTNIGHTLY
+  MONTHLY
+}
+
+enum PayrollStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum TaxType {
+  PAYE
+  NSSA
+  AIDS_LEVY
+}
+
+enum TimesheetStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  MATERNITY
+  PATERNITY
+  UNPAID
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}

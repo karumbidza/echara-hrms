@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build outputs
+dist/
+build/
+*/dist/
+*/build/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+*/.env
+*/.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Prisma
+*.db
+*.db-journal
+prisma/migrations/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Production
+*.tgz
+
+# Misc
+.cache/
+.temp/
+*.pid
+*.seed
+*.pid.lock
