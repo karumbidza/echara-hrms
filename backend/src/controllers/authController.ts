@@ -7,7 +7,10 @@ const prisma = new PrismaClient();
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { email, password, fullName, companyName, currency } = req.body;
+    const { email, password, name, fullName, companyName, currency } = req.body;
+    
+    // Use name if fullName is not provided (frontend sends 'name')
+    const userName = fullName || name;
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -43,7 +46,7 @@ export const register = async (req: Request, res: Response) => {
       data: {
         email,
         password: hashedPassword,
-        fullName,
+        fullName: userName,
         role: 'ADMIN',
         tenantId: tenant.id
       },
