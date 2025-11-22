@@ -8,4 +8,4 @@ cmds = ["npm ci --production=false"]
 cmds = ["npx prisma generate", "npm run build"]
 
 [start]
-cmd = "npx prisma db push --skip-generate --accept-data-loss || true; node dist/app.js"
+cmd = "sh start.sh"
