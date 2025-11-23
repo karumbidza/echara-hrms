@@ -3,42 +3,47 @@ import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
 import { PAYEEngine } from '../utils/payeEngine';
 import { NSSAEngine } from '../utils/nssaEngine';
-import { CurrencyConverter } from '../utils/currencyConverter';
 
 const prisma = new PrismaClient();
 
-interface PayrollCalculation {
+interface EmployeePayrollData {
   employeeId: string;
-  employeeNumber: string;
-  employeeName: string;
   basicSalary: number;
-  allowances: number;
-  bonuses: number;
-  overtime: number;
-  grossSalary: number;
-  preTaxDeductions: number;
-  taxableIncome: number;
-  paye: number;
-  aidsLevy: number;
-  nssaEmployee: number;
-  nssaEmployer: number;
+  housingAllowance: number;
+  transportAllowance: number;
+  mealAllowance: number;
+  otherAllowances: number;
+  overtimePay: number;
+  bonus: number;
+  commission: number;
+  pensionContribution: number;
+  medicalAid: number;
+  loanRepayment: number;
+  salaryAdvance: number;
   otherDeductions: number;
-  netSalary: number;
-  currency: string;
-  contractCurrency: string;
+  paymentCurrency: string;
 }
 
 /**
  * Run payroll for specified period
+ * Zimbabwean payroll processing with proper tax calculations
  */
 export const runPayroll = async (req: AuthRequest, res: Response) => {
   try {
     const tenantId = req.user?.tenantId;
     const userId = req.user?.userId;
-    const { periodStart, periodEnd, employeeIds, allowances, bonuses, overtime, deductions } = req.body;
+    const { periodStart, periodEnd, exchangeRate, employees: employeeDataArray } = req.body;
 
     if (!periodStart || !periodEnd) {
       return res.status(400).json({ error: 'Period start and end dates are required' });
+    }
+
+    if (!exchangeRate || exchangeRate <= 0) {
+      return res.status(400).json({ error: 'Valid exchange rate is required' });
+    }
+
+    if (!employeeDataArray || employeeDataArray.length === 0) {
+      return res.status(400).json({ error: 'At least one employee must be selected' });
     }
 
     // Create payroll run
@@ -52,74 +57,96 @@ export const runPayroll = async (req: AuthRequest, res: Response) => {
       }
     });
 
-    // Get employees for payroll
-    const employees = await prisma.employee.findMany({
-      where: {
-        tenantId,
-        isActive: true,
-        ...(employeeIds && employeeIds.length > 0 ? { id: { in: employeeIds } } : {})
-      },
-      include: {
-        department: true
+    // Save exchange rate for this period
+    await prisma.currencyRate.create({
+      data: {
+        fromCurrency: 'USD',
+        toCurrency: 'ZWL',
+        rate: exchangeRate,
+        effectiveDate: new Date(periodEnd),
+        source: 'Manual',
+        tenantId: tenantId!
       }
     });
 
-    if (employees.length === 0) {
-      await prisma.payrollRun.update({
-        where: { id: payrollRun.id },
-        data: { status: 'FAILED' }
-      });
-      return res.status(400).json({ error: 'No active employees found for payroll' });
-    }
+    // Also save reverse rate
+    await prisma.currencyRate.create({
+      data: {
+        fromCurrency: 'ZWL',
+        toCurrency: 'USD',
+        rate: 1 / exchangeRate,
+        effectiveDate: new Date(periodEnd),
+        source: 'Manual',
+        tenantId: tenantId!
+      }
+    });
 
-    const calculations: PayrollCalculation[] = [];
     let totalGross = 0;
     let totalNet = 0;
+    const processedCount = 0;
 
     // Process each employee
-    for (const employee of employees) {
+    for (const empData of employeeDataArray) {
       try {
-        const calculation = await calculateEmployeePayroll({
+        // Get employee details
+        const employee = await prisma.employee.findFirst({
+          where: { id: empData.employeeId, tenantId },
+          include: { department: true }
+        });
+
+        if (!employee) {
+          console.error(`Employee ${empData.employeeId} not found`);
+          continue;
+        }
+
+        // Calculate payroll for this employee
+        const result = await calculateEmployeePayroll({
           employee,
+          empData,
           periodStart: new Date(periodStart),
           periodEnd: new Date(periodEnd),
-          allowances: allowances?.[employee.id] || 0,
-          bonuses: bonuses?.[employee.id] || 0,
-          overtime: overtime?.[employee.id] || 0,
-          deductions: deductions?.[employee.id] || 0,
+          exchangeRate,
           tenantId: tenantId!
         });
 
         // Create payslip
-        const payslip = await prisma.payslip.create({
+        await prisma.payslip.create({
           data: {
             employeeId: employee.id,
             payrollRunId: payrollRun.id,
             periodStart: new Date(periodStart),
             periodEnd: new Date(periodEnd),
             payDate: new Date(periodEnd),
-            basicSalary: calculation.basicSalary,
-            allowances: calculation.allowances,
-            bonuses: calculation.bonuses,
-            overtime: calculation.overtime,
-            grossSalary: calculation.grossSalary,
-            preTaxDeductions: calculation.preTaxDeductions,
-            taxableIncome: calculation.taxableIncome,
-            paye: calculation.paye,
-            aidsLevy: calculation.aidsLevy,
-            nssaEmployee: calculation.nssaEmployee,
-            nssaEmployer: calculation.nssaEmployer,
-            otherDeductions: calculation.otherDeductions,
-            totalDeductions: calculation.paye + calculation.aidsLevy + calculation.nssaEmployee + calculation.otherDeductions,
-            netSalary: calculation.netSalary,
-            employerTotal: calculation.nssaEmployer,
-            currency: calculation.currency,
-            contractCurrency: calculation.contractCurrency,
-            ytdGross: employee.ytdGross + calculation.grossSalary,
-            ytdTaxable: employee.ytdTaxable + calculation.taxableIncome,
-            ytdPaye: employee.ytdPaye + calculation.paye,
-            ytdNssa: employee.ytdNssa + (calculation.nssaEmployee + calculation.nssaEmployer),
-            ytdNetPay: employee.ytdNetPay + calculation.netSalary
+            
+            // Earnings
+            basicSalary: result.basicSalary,
+            allowances: result.totalAllowances,
+            bonuses: result.totalBonuses,
+            overtime: result.overtimePay,
+            grossSalary: result.grossSalary,
+            
+            // Deductions
+            preTaxDeductions: result.preTaxDeductions,
+            taxableIncome: result.taxableIncome,
+            paye: result.paye,
+            aidsLevy: result.aidsLevy,
+            nssaEmployee: result.nssaEmployee,
+            nssaEmployer: result.nssaEmployer,
+            otherDeductions: result.postTaxDeductions,
+            totalDeductions: result.totalDeductions,
+            netSalary: result.netSalary,
+            employerTotal: result.nssaEmployer,
+            
+            // Currency
+            currency: empData.paymentCurrency,
+            contractCurrency: employee.contractCurrency,
+            
+            // YTD
+            ytdGross: result.ytdGross,
+            ytdTaxable: result.ytdTaxable,
+            ytdPaye: result.ytdPaye,
+            ytdNssa: result.ytdNssa,
+            ytdNetPay: result.ytdNetPay
           }
         });
 
@@ -127,22 +154,20 @@ export const runPayroll = async (req: AuthRequest, res: Response) => {
         await prisma.employee.update({
           where: { id: employee.id },
           data: {
-            ytdGross: { increment: calculation.grossSalary },
-            ytdTaxable: { increment: calculation.taxableIncome },
-            ytdPaye: { increment: calculation.paye },
-            ytdNssa: { increment: calculation.nssaEmployee + calculation.nssaEmployer },
-            ytdNetPay: { increment: calculation.netSalary },
+            ytdGross: result.ytdGross,
+            ytdTaxable: result.ytdTaxable,
+            ytdPaye: result.ytdPaye,
+            ytdNssa: result.ytdNssa,
+            ytdNetPay: result.ytdNetPay,
             ytdYear: new Date(periodEnd).getFullYear()
           }
         });
 
-        calculations.push(calculation);
-        totalGross += calculation.grossSalary;
-        totalNet += calculation.netSalary;
+        totalGross += result.grossSalary;
+        totalNet += result.netSalary;
 
       } catch (error) {
-        console.error(`Error processing employee ${employee.id}:`, error);
-        // Continue with other employees
+        console.error(`Error processing employee ${empData.employeeId}:`, error);
       }
     }
 
@@ -162,11 +187,11 @@ export const runPayroll = async (req: AuthRequest, res: Response) => {
         id: payrollRun.id,
         periodStart,
         periodEnd,
-        employeesProcessed: calculations.length,
+        employeesProcessed: employeeDataArray.length,
         totalGross,
-        totalNet
-      },
-      calculations
+        totalNet,
+        exchangeRate
+      }
     });
 
   } catch (error) {
@@ -176,42 +201,42 @@ export const runPayroll = async (req: AuthRequest, res: Response) => {
 };
 
 /**
- * Calculate payroll for a single employee
+ * Calculate payroll for a single employee (Zimbabwean style)
  */
 async function calculateEmployeePayroll(input: {
   employee: any;
+  empData: EmployeePayrollData;
   periodStart: Date;
   periodEnd: Date;
-  allowances: number;
-  bonuses: number;
-  overtime: number;
-  deductions: number;
+  exchangeRate: number;
   tenantId: string;
-}): Promise<PayrollCalculation> {
+}) {
+  const { employee, empData, periodEnd, tenantId } = input;
+
+  // Step 1: Calculate Gross Earnings (all taxable)
+  const basicSalary = empData.basicSalary;
+  const totalAllowances = 
+    empData.housingAllowance + 
+    empData.transportAllowance + 
+    empData.mealAllowance + 
+    empData.otherAllowances;
   
-  const { employee, periodStart, periodEnd, allowances, bonuses, overtime, deductions, tenantId } = input;
+  const totalBonuses = empData.bonus + empData.commission;
+  const overtimePay = empData.overtimePay;
 
-  // Step 1: Calculate gross salary
-  const basicSalary = calculateBasicSalaryForPeriod(
-    employee.basicSalary,
-    employee.payFrequency,
-    periodStart,
-    periodEnd
-  );
+  const grossSalary = basicSalary + totalAllowances + totalBonuses + overtimePay;
 
-  const grossSalary = basicSalary + allowances + bonuses + overtime;
+  // Step 2: Pre-tax Deductions (reduce taxable income)
+  const preTaxDeductions = empData.pensionContribution + empData.medicalAid;
 
-  // Step 2: Pre-tax deductions (none for now, but extensible)
-  const preTaxDeductions = 0;
-
-  // Step 3: Calculate taxable income
+  // Step 3: Calculate Taxable Income
   const taxableIncome = grossSalary - preTaxDeductions;
 
   // Step 4: Calculate PAYE (using contract currency)
   const payeResult = await PAYEEngine.calculatePAYE({
     taxableIncome,
-    currency: employee.contractCurrency || employee.currency,
-    period: employee.payFrequency,
+    currency: employee.contractCurrency,
+    period: employee.payFrequency || 'MONTHLY',
     ytdTaxable: employee.ytdTaxable || 0,
     ytdPaye: employee.ytdPaye || 0,
     periodDate: periodEnd,
@@ -224,7 +249,7 @@ async function calculateEmployeePayroll(input: {
   // Step 5: Calculate NSSA
   const nssaResult = await NSSAEngine.calculateNSSA({
     grossSalary,
-    currency: employee.contractCurrency || employee.currency,
+    currency: employee.contractCurrency,
     periodDate: periodEnd,
     tenantId
   });
@@ -232,18 +257,28 @@ async function calculateEmployeePayroll(input: {
   const nssaEmployee = nssaResult.employeeContribution;
   const nssaEmployer = nssaResult.employerContribution;
 
-  // Step 6: Calculate net pay
-  const totalDeductions = paye + aidsLevy + nssaEmployee + deductions;
+  // Step 6: Post-tax Deductions
+  const postTaxDeductions = 
+    empData.loanRepayment + 
+    empData.salaryAdvance + 
+    empData.otherDeductions;
+
+  // Step 7: Calculate Total Deductions and Net Pay
+  const totalDeductions = paye + aidsLevy + nssaEmployee + postTaxDeductions;
   const netSalary = grossSalary - totalDeductions;
 
+  // Step 8: Update YTD
+  const ytdGross = (employee.ytdGross || 0) + grossSalary;
+  const ytdTaxable = (employee.ytdTaxable || 0) + taxableIncome;
+  const ytdPaye = (employee.ytdPaye || 0) + paye;
+  const ytdNssa = (employee.ytdNssa || 0) + (nssaEmployee + nssaEmployer);
+  const ytdNetPay = (employee.ytdNetPay || 0) + netSalary;
+
   return {
-    employeeId: employee.id,
-    employeeNumber: employee.employeeNumber,
-    employeeName: `${employee.firstName} ${employee.lastName}`,
     basicSalary,
-    allowances,
-    bonuses,
-    overtime,
+    totalAllowances,
+    totalBonuses,
+    overtimePay,
     grossSalary,
     preTaxDeductions,
     taxableIncome,
@@ -251,25 +286,15 @@ async function calculateEmployeePayroll(input: {
     aidsLevy,
     nssaEmployee,
     nssaEmployer,
-    otherDeductions: deductions,
+    postTaxDeductions,
+    totalDeductions,
     netSalary,
-    currency: employee.currency,
-    contractCurrency: employee.contractCurrency || employee.currency
+    ytdGross,
+    ytdTaxable,
+    ytdPaye,
+    ytdNssa,
+    ytdNetPay
   };
-}
-
-/**
- * Calculate basic salary based on pay frequency and period
- */
-function calculateBasicSalaryForPeriod(
-  annualOrMonthlySalary: number,
-  payFrequency: string,
-  periodStart: Date,
-  periodEnd: Date
-): number {
-  // For simplicity, return the salary as-is based on frequency
-  // In a real system, you'd calculate pro-rata for partial periods
-  return annualOrMonthlySalary;
 }
 
 /**

@@ -9,6 +9,7 @@ interface Employee {
   email: string;
   basicSalary: number;
   currency: string;
+  contractCurrency: string;
   department: {
     name: string;
   };
@@ -16,10 +17,29 @@ interface Employee {
 
 interface PayrollInputs {
   [employeeId: string]: {
-    allowances: number;
-    bonuses: number;
-    overtime: number;
-    deductions: number;
+    // Base amount
+    basicSalary: number;
+    
+    // Earnings (Taxable)
+    housingAllowance: number;
+    transportAllowance: number;
+    mealAllowance: number;
+    otherAllowances: number;
+    overtimePay: number;
+    bonus: number;
+    commission: number;
+    
+    // Pre-tax Deductions (reduce taxable income)
+    pensionContribution: number;
+    medicalAid: number;
+    
+    // Post-tax Deductions
+    loanRepayment: number;
+    salaryAdvance: number;
+    otherDeductions: number;
+    
+    // Payment details
+    paymentCurrency: string;
   };
 }
 
@@ -29,8 +49,10 @@ const Payroll: React.FC = () => {
   const [payrollInputs, setPayrollInputs] = useState<PayrollInputs>({});
   const [periodStart, setPeriodStart] = useState('');
   const [periodEnd, setPeriodEnd] = useState('');
+  const [exchangeRate, setExchangeRate] = useState(30); // USD to ZWL rate
   const [processing, setProcessing] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [expandedEmployees, setExpandedEmployees] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchEmployees();
@@ -49,7 +71,32 @@ const Payroll: React.FC = () => {
       const response = await axios.get(`${API_URL}/employees`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setEmployees(response.data.employees.filter((emp: Employee) => emp.basicSalary > 0));
+      
+      const activeEmployees = response.data.employees.filter((emp: Employee) => emp.basicSalary > 0);
+      setEmployees(activeEmployees);
+      
+      // Initialize payroll inputs with basic salary
+      const initialInputs: PayrollInputs = {};
+      activeEmployees.forEach((emp: Employee) => {
+        initialInputs[emp.id] = {
+          basicSalary: emp.basicSalary,
+          housingAllowance: 0,
+          transportAllowance: 0,
+          mealAllowance: 0,
+          otherAllowances: 0,
+          overtimePay: 0,
+          bonus: 0,
+          commission: 0,
+          pensionContribution: 0,
+          medicalAid: 0,
+          loanRepayment: 0,
+          salaryAdvance: 0,
+          otherDeductions: 0,
+          paymentCurrency: emp.currency || 'USD'
+        };
+      });
+      setPayrollInputs(initialInputs);
+      
     } catch (error) {
       console.error('Error fetching employees:', error);
       setMessage({ type: 'error', text: 'Failed to load employees' });
@@ -72,19 +119,46 @@ const Payroll: React.FC = () => {
     );
   };
 
+  const toggleEmployeeExpanded = (employeeId: string) => {
+    setExpandedEmployees(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(employeeId)) {
+        newSet.delete(employeeId);
+      } else {
+        newSet.add(employeeId);
+      }
+      return newSet;
+    });
+  };
+
   const handleInputChange = (employeeId: string, field: keyof PayrollInputs[string], value: string) => {
     setPayrollInputs(prev => ({
       ...prev,
       [employeeId]: {
         ...prev[employeeId],
-        [field]: parseFloat(value) || 0
+        [field]: field === 'paymentCurrency' ? value : (parseFloat(value) || 0)
       }
     }));
   };
 
-  const calculateGross = (employee: Employee) => {
-    const inputs = payrollInputs[employee.id] || { allowances: 0, bonuses: 0, overtime: 0, deductions: 0 };
-    return employee.basicSalary + inputs.allowances + inputs.bonuses + inputs.overtime;
+  const calculateTotals = (employeeId: string) => {
+    const inputs = payrollInputs[employeeId];
+    if (!inputs) return { gross: 0, preTaxDeductions: 0, taxable: 0 };
+
+    const earnings = 
+      inputs.basicSalary + 
+      inputs.housingAllowance + 
+      inputs.transportAllowance + 
+      inputs.mealAllowance + 
+      inputs.otherAllowances + 
+      inputs.overtimePay + 
+      inputs.bonus + 
+      inputs.commission;
+
+    const preTaxDeductions = inputs.pensionContribution + inputs.medicalAid;
+    const taxable = earnings - preTaxDeductions;
+
+    return { gross: earnings, preTaxDeductions, taxable };
   };
 
   const handleRunPayroll = async () => {
@@ -98,6 +172,11 @@ const Payroll: React.FC = () => {
       return;
     }
 
+    if (exchangeRate <= 0) {
+      setMessage({ type: 'error', text: 'Please enter a valid exchange rate' });
+      return;
+    }
+
     setProcessing(true);
     setMessage(null);
 
@@ -105,18 +184,26 @@ const Payroll: React.FC = () => {
       const token = localStorage.getItem('token');
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
       
-      // Format inputs for API
-      const allowances: any = {};
-      const bonuses: any = {};
-      const overtime: any = {};
-      const deductions: any = {};
-
-      selectedEmployees.forEach(empId => {
-        const inputs = payrollInputs[empId] || { allowances: 0, bonuses: 0, overtime: 0, deductions: 0 };
-        allowances[empId] = inputs.allowances;
-        bonuses[empId] = inputs.bonuses;
-        overtime[empId] = inputs.overtime;
-        deductions[empId] = inputs.deductions;
+      // Format data for API - send detailed breakdown per employee
+      const employeeData = selectedEmployees.map(empId => {
+        const inputs = payrollInputs[empId];
+        return {
+          employeeId: empId,
+          basicSalary: inputs.basicSalary,
+          housingAllowance: inputs.housingAllowance,
+          transportAllowance: inputs.transportAllowance,
+          mealAllowance: inputs.mealAllowance,
+          otherAllowances: inputs.otherAllowances,
+          overtimePay: inputs.overtimePay,
+          bonus: inputs.bonus,
+          commission: inputs.commission,
+          pensionContribution: inputs.pensionContribution,
+          medicalAid: inputs.medicalAid,
+          loanRepayment: inputs.loanRepayment,
+          salaryAdvance: inputs.salaryAdvance,
+          otherDeductions: inputs.otherDeductions,
+          paymentCurrency: inputs.paymentCurrency
+        };
       });
 
       const response = await axios.post(
@@ -124,11 +211,8 @@ const Payroll: React.FC = () => {
         {
           periodStart,
           periodEnd,
-          employeeIds: selectedEmployees,
-          allowances,
-          bonuses,
-          overtime,
-          deductions
+          exchangeRate,
+          employees: employeeData
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -137,10 +221,6 @@ const Payroll: React.FC = () => {
         type: 'success',
         text: `Payroll processed successfully! ${response.data.payrollRun.employeesProcessed} employees processed.`
       });
-
-      // Reset form
-      setSelectedEmployees([]);
-      setPayrollInputs({});
 
       // Redirect to payroll runs after 2 seconds
       setTimeout(() => {
@@ -176,25 +256,40 @@ const Payroll: React.FC = () => {
 
       <div className="card mb-4">
         <div className="card-body">
-          <h5 className="card-title">Payroll Period</h5>
+          <h5 className="card-title">Payroll Period & Exchange Rate</h5>
           <div className="row">
-            <div className="col-md-6">
-              <label className="form-label">Period Start</label>
+            <div className="col-md-4">
+              <label className="form-label">Period Start *</label>
               <input
                 type="date"
                 className="form-control"
                 value={periodStart}
                 onChange={(e) => setPeriodStart(e.target.value)}
+                required
               />
             </div>
-            <div className="col-md-6">
-              <label className="form-label">Period End</label>
+            <div className="col-md-4">
+              <label className="form-label">Period End *</label>
               <input
                 type="date"
                 className="form-control"
                 value={periodEnd}
                 onChange={(e) => setPeriodEnd(e.target.value)}
+                required
               />
+            </div>
+            <div className="col-md-4">
+              <label className="form-label">Exchange Rate (1 USD = ? ZWL) *</label>
+              <input
+                type="number"
+                className="form-control"
+                value={exchangeRate}
+                onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 0)}
+                min="1"
+                step="0.01"
+                required
+              />
+              <small className="text-muted">Current interbank rate for this payroll run</small>
             </div>
           </div>
         </div>
@@ -203,7 +298,7 @@ const Payroll: React.FC = () => {
       <div className="card">
         <div className="card-body">
           <div className="d-flex justify-content-between align-items-center mb-3">
-            <h5 className="card-title mb-0">Select Employees</h5>
+            <h5 className="card-title mb-0">Select Employees & Enter Details</h5>
             <div>
               <span className="text-muted me-3">
                 {selectedEmployees.length} of {employees.length} selected
@@ -214,112 +309,299 @@ const Payroll: React.FC = () => {
             </div>
           </div>
 
-          <div className="table-responsive">
-            <table className="table table-hover">
-              <thead>
-                <tr>
-                  <th style={{width: '50px'}}>
-                    <input
-                      type="checkbox"
-                      className="form-check-input"
-                      checked={selectedEmployees.length === employees.length && employees.length > 0}
-                      onChange={handleSelectAll}
-                    />
-                  </th>
-                  <th>Employee</th>
-                  <th>Department</th>
-                  <th>Basic Salary</th>
-                  <th>Allowances</th>
-                  <th>Bonuses</th>
-                  <th>Overtime</th>
-                  <th>Deductions</th>
-                  <th>Gross Salary</th>
-                </tr>
-              </thead>
-              <tbody>
-                {employees.map((employee) => {
-                  const isSelected = selectedEmployees.includes(employee.id);
-                  const inputs = payrollInputs[employee.id] || { allowances: 0, bonuses: 0, overtime: 0, deductions: 0 };
-                  
-                  return (
-                    <tr key={employee.id} className={isSelected ? 'table-active' : ''}>
-                      <td>
-                        <input
-                          type="checkbox"
-                          className="form-check-input"
-                          checked={isSelected}
-                          onChange={() => handleEmployeeSelect(employee.id)}
-                        />
-                      </td>
-                      <td>
-                        <div>
-                          <strong>{employee.firstName} {employee.lastName}</strong>
-                          <div className="small text-muted">{employee.employeeNumber}</div>
-                        </div>
-                      </td>
-                      <td>{employee.department?.name || 'N/A'}</td>
-                      <td>{employee.currency} {employee.basicSalary.toFixed(2)}</td>
-                      <td>
-                        <input
-                          type="number"
-                          className="form-control form-control-sm"
-                          style={{ width: '100px' }}
-                          value={inputs.allowances || ''}
-                          onChange={(e) => handleInputChange(employee.id, 'allowances', e.target.value)}
-                          disabled={!isSelected}
-                          min="0"
-                          step="0.01"
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          className="form-control form-control-sm"
-                          style={{ width: '100px' }}
-                          value={inputs.bonuses || ''}
-                          onChange={(e) => handleInputChange(employee.id, 'bonuses', e.target.value)}
-                          disabled={!isSelected}
-                          min="0"
-                          step="0.01"
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          className="form-control form-control-sm"
-                          style={{ width: '100px' }}
-                          value={inputs.overtime || ''}
-                          onChange={(e) => handleInputChange(employee.id, 'overtime', e.target.value)}
-                          disabled={!isSelected}
-                          min="0"
-                          step="0.01"
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          className="form-control form-control-sm"
-                          style={{ width: '100px' }}
-                          value={inputs.deductions || ''}
-                          onChange={(e) => handleInputChange(employee.id, 'deductions', e.target.value)}
-                          disabled={!isSelected}
-                          min="0"
-                          step="0.01"
-                        />
-                      </td>
-                      <td>
-                        <strong>{employee.currency} {calculateGross(employee).toFixed(2)}</strong>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {employees.length === 0 && (
+          {employees.length === 0 ? (
             <div className="text-center py-5">
               <p className="text-muted">No employees with basic salary configured</p>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-hover">
+                <thead>
+                  <tr>
+                    <th style={{width: '50px'}}>
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        checked={selectedEmployees.length === employees.length && employees.length > 0}
+                        onChange={handleSelectAll}
+                      />
+                    </th>
+                    <th>Employee</th>
+                    <th>Contract Currency</th>
+                    <th>Payment Currency</th>
+                    <th className="text-end">Basic Salary</th>
+                    <th className="text-end">Gross Earnings</th>
+                    <th className="text-end">Pre-tax Ded.</th>
+                    <th className="text-end">Taxable Income</th>
+                    <th style={{width: '100px'}}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {employees.map((employee) => {
+                    const isSelected = selectedEmployees.includes(employee.id);
+                    const isExpanded = expandedEmployees.has(employee.id);
+                    const inputs = payrollInputs[employee.id];
+                    const totals = calculateTotals(employee.id);
+                    
+                    return (
+                      <React.Fragment key={employee.id}>
+                        <tr className={isSelected ? 'table-active' : ''}>
+                          <td>
+                            <input
+                              type="checkbox"
+                              className="form-check-input"
+                              checked={isSelected}
+                              onChange={() => handleEmployeeSelect(employee.id)}
+                            />
+                          </td>
+                          <td>
+                            <div>
+                              <strong>{employee.firstName} {employee.lastName}</strong>
+                              <div className="small text-muted">{employee.employeeNumber}</div>
+                              <div className="small text-muted">{employee.department?.name}</div>
+                            </div>
+                          </td>
+                          <td>
+                            <span className="badge bg-info">{employee.contractCurrency}</span>
+                          </td>
+                          <td>
+                            <select
+                              className="form-select form-select-sm"
+                              value={inputs?.paymentCurrency || employee.currency}
+                              onChange={(e) => handleInputChange(employee.id, 'paymentCurrency', e.target.value)}
+                              disabled={!isSelected}
+                              style={{ width: '90px' }}
+                            >
+                              <option value="USD">USD</option>
+                              <option value="ZWL">ZWL</option>
+                            </select>
+                          </td>
+                          <td className="text-end">
+                            <input
+                              type="number"
+                              className="form-control form-control-sm text-end"
+                              value={inputs?.basicSalary || employee.basicSalary}
+                              onChange={(e) => handleInputChange(employee.id, 'basicSalary', e.target.value)}
+                              disabled={!isSelected}
+                              min="0"
+                              step="0.01"
+                              style={{ width: '120px' }}
+                            />
+                          </td>
+                          <td className="text-end">
+                            <strong>{employee.contractCurrency} {totals.gross.toFixed(2)}</strong>
+                          </td>
+                          <td className="text-end">
+                            {employee.contractCurrency} {totals.preTaxDeductions.toFixed(2)}
+                          </td>
+                          <td className="text-end">
+                            <strong>{employee.contractCurrency} {totals.taxable.toFixed(2)}</strong>
+                          </td>
+                          <td>
+                            <button
+                              className="btn btn-sm btn-outline-primary"
+                              onClick={() => toggleEmployeeExpanded(employee.id)}
+                              disabled={!isSelected}
+                            >
+                              {isExpanded ? 'Hide' : 'Details'}
+                            </button>
+                          </td>
+                        </tr>
+                        
+                        {isExpanded && isSelected && (
+                          <tr>
+                            <td colSpan={9} style={{ backgroundColor: '#f8f9fa' }}>
+                              <div className="p-3">
+                                <h6 className="mb-3">Earnings & Deductions for {employee.firstName} {employee.lastName}</h6>
+                                <div className="row">
+                                  {/* Earnings Section */}
+                                  <div className="col-md-6">
+                                    <h6 className="text-success">📈 Earnings (Taxable)</h6>
+                                    <div className="row g-2 mb-2">
+                                      <div className="col-6">
+                                        <label className="form-label small">Housing Allowance</label>
+                                        <input
+                                          type="number"
+                                          className="form-control form-control-sm"
+                                          value={inputs?.housingAllowance || ''}
+                                          onChange={(e) => handleInputChange(employee.id, 'housingAllowance', e.target.value)}
+                                          min="0"
+                                          step="0.01"
+                                          placeholder="0.00"
+                                        />
+                                      </div>
+                                      <div className="col-6">
+                                        <label className="form-label small">Transport Allowance</label>
+                                        <input
+                                          type="number"
+                                          className="form-control form-control-sm"
+                                          value={inputs?.transportAllowance || ''}
+                                          onChange={(e) => handleInputChange(employee.id, 'transportAllowance', e.target.value)}
+                                          min="0"
+                                          step="0.01"
+                                          placeholder="0.00"
+                                        />
+                                      </div>
+                                      <div className="col-6">
+                                        <label className="form-label small">Meal Allowance</label>
+                                        <input
+                                          type="number"
+                                          className="form-control form-control-sm"
+                                          value={inputs?.mealAllowance || ''}
+                                          onChange={(e) => handleInputChange(employee.id, 'mealAllowance', e.target.value)}
+                                          min="0"
+                                          step="0.01"
+                                          placeholder="0.00"
+                                        />
+                                      </div>
+                                      <div className="col-6">
+                                        <label className="form-label small">Other Allowances</label>
+                                        <input
+                                          type="number"
+                                          className="form-control form-control-sm"
+                                          value={inputs?.otherAllowances || ''}
+                                          onChange={(e) => handleInputChange(employee.id, 'otherAllowances', e.target.value)}
+                                          min="0"
+                                          step="0.01"
+                                          placeholder="0.00"
+                                        />
+                                      </div>
+                                      <div className="col-6">
+                                        <label className="form-label small">Overtime Pay</label>
+                                        <input
+                                          type="number"
+                                          className="form-control form-control-sm"
+                                          value={inputs?.overtimePay || ''}
+                                          onChange={(e) => handleInputChange(employee.id, 'overtimePay', e.target.value)}
+                                          min="0"
+                                          step="0.01"
+                                          placeholder="0.00"
+                                        />
+                                      </div>
+                                      <div className="col-6">
+                                        <label className="form-label small">Bonus</label>
+                                        <input
+                                          type="number"
+                                          className="form-control form-control-sm"
+                                          value={inputs?.bonus || ''}
+                                          onChange={(e) => handleInputChange(employee.id, 'bonus', e.target.value)}
+                                          min="0"
+                                          step="0.01"
+                                          placeholder="0.00"
+                                        />
+                                      </div>
+                                      <div className="col-6">
+                                        <label className="form-label small">Commission</label>
+                                        <input
+                                          type="number"
+                                          className="form-control form-control-sm"
+                                          value={inputs?.commission || ''}
+                                          onChange={(e) => handleInputChange(employee.id, 'commission', e.target.value)}
+                                          min="0"
+                                          step="0.01"
+                                          placeholder="0.00"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Deductions Section */}
+                                  <div className="col-md-6">
+                                    <h6 className="text-warning">📉 Pre-tax Deductions (Reduce Taxable Income)</h6>
+                                    <div className="row g-2 mb-3">
+                                      <div className="col-6">
+                                        <label className="form-label small">Pension Contribution</label>
+                                        <input
+                                          type="number"
+                                          className="form-control form-control-sm"
+                                          value={inputs?.pensionContribution || ''}
+                                          onChange={(e) => handleInputChange(employee.id, 'pensionContribution', e.target.value)}
+                                          min="0"
+                                          step="0.01"
+                                          placeholder="0.00"
+                                        />
+                                      </div>
+                                      <div className="col-6">
+                                        <label className="form-label small">Medical Aid</label>
+                                        <input
+                                          type="number"
+                                          className="form-control form-control-sm"
+                                          value={inputs?.medicalAid || ''}
+                                          onChange={(e) => handleInputChange(employee.id, 'medicalAid', e.target.value)}
+                                          min="0"
+                                          step="0.01"
+                                          placeholder="0.00"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <h6 className="text-danger">💸 Post-tax Deductions</h6>
+                                    <div className="row g-2">
+                                      <div className="col-6">
+                                        <label className="form-label small">Loan Repayment</label>
+                                        <input
+                                          type="number"
+                                          className="form-control form-control-sm"
+                                          value={inputs?.loanRepayment || ''}
+                                          onChange={(e) => handleInputChange(employee.id, 'loanRepayment', e.target.value)}
+                                          min="0"
+                                          step="0.01"
+                                          placeholder="0.00"
+                                        />
+                                      </div>
+                                      <div className="col-6">
+                                        <label className="form-label small">Salary Advance</label>
+                                        <input
+                                          type="number"
+                                          className="form-control form-control-sm"
+                                          value={inputs?.salaryAdvance || ''}
+                                          onChange={(e) => handleInputChange(employee.id, 'salaryAdvance', e.target.value)}
+                                          min="0"
+                                          step="0.01"
+                                          placeholder="0.00"
+                                        />
+                                      </div>
+                                      <div className="col-6">
+                                        <label className="form-label small">Other Deductions</label>
+                                        <input
+                                          type="number"
+                                          className="form-control form-control-sm"
+                                          value={inputs?.otherDeductions || ''}
+                                          onChange={(e) => handleInputChange(employee.id, 'otherDeductions', e.target.value)}
+                                          min="0"
+                                          step="0.01"
+                                          placeholder="0.00"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="mt-3 p-2 bg-white border rounded">
+                                  <div className="row text-center">
+                                    <div className="col-4">
+                                      <small className="text-muted">Gross Earnings</small>
+                                      <div><strong>{employee.contractCurrency} {totals.gross.toFixed(2)}</strong></div>
+                                    </div>
+                                    <div className="col-4">
+                                      <small className="text-muted">Pre-tax Deductions</small>
+                                      <div><strong>{employee.contractCurrency} {totals.preTaxDeductions.toFixed(2)}</strong></div>
+                                    </div>
+                                    <div className="col-4">
+                                      <small className="text-muted">Taxable Income</small>
+                                      <div><strong className="text-primary">{employee.contractCurrency} {totals.taxable.toFixed(2)}</strong></div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
