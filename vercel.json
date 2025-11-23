@@ -1,10 +1,8 @@
 {
-  "github": {
-    "silent": true
-  },
-  "buildCommand": "npm --prefix ./frontend install --legacy-peer-deps && npm --prefix ./frontend run build",
+  "buildCommand": "cd frontend && npm install --legacy-peer-deps && npm run build",
   "outputDirectory": "frontend/build",
-  "installCommand": null,
+  "installCommand": "echo 'Using buildCommand for install'",
+  "framework": null,
   "headers": [
     {
       "source": "/(.*)",
