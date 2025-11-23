@@ -371,8 +371,8 @@ const Payroll: React.FC = () => {
                     <th>Payment Currency</th>
                     <th className="text-end">Basic Salary</th>
                     <th className="text-end">Gross Earnings</th>
-                    <th className="text-end">Pre-tax Ded.</th>
-                    <th className="text-end">Taxable Income</th>
+                    <th className="text-end">Total Deductions</th>
+                    <th className="text-end">Est. Net Pay</th>
                     <th style={{width: '100px'}}>Actions</th>
                   </tr>
                 </thead>
@@ -435,11 +435,11 @@ const Payroll: React.FC = () => {
                           <td className="text-end">
                             <strong>{employee.contractCurrency} {totals.gross.toFixed(2)}</strong>
                           </td>
-                          <td className="text-end">
-                            {employee.contractCurrency} {totals.preTaxDeductions.toFixed(2)}
+                          <td className="text-end text-danger">
+                            -{employee.contractCurrency} {fullPayroll.totalDeductions.toFixed(2)}
                           </td>
                           <td className="text-end">
-                            <strong>{employee.contractCurrency} {totals.taxable.toFixed(2)}</strong>
+                            <strong className="text-success">{employee.contractCurrency} {fullPayroll.netPay.toFixed(2)}</strong>
                           </td>
                           <td>
                             <button
