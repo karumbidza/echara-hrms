@@ -7,7 +7,7 @@
     "dev": "nodemon",
     "dev:ts": "ts-node src/app.ts",
     "build": "tsc",
-    "start": "node dist/app.js",
+    "start": "sh start.sh",
     "start:prod": "npx prisma db push --accept-data-loss && node dist/app.js",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
