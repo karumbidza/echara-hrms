@@ -54,9 +54,9 @@ app.use('/api/employees', employeeRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/job-titles', jobTitleRoutes);
+app.use('/api/payroll/approval', payrollApprovalRoutes); // Must be before /api/payroll
 app.use('/api/payroll', payrollRoutes);
 app.use('/api/tax-tables', taxTableRoutes);
-app.use('/api/payroll/approval', payrollApprovalRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
