@@ -6,6 +6,9 @@ import Navigation from './components/Navigation';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Employees from './pages/Employees';
+import EmployeeForm from './pages/EmployeeForm';
+import Departments from './pages/Departments';
 
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -32,6 +35,38 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/employees" 
+              element={
+                <ProtectedRoute>
+                  <Employees />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/employees/new" 
+              element={
+                <ProtectedRoute>
+                  <EmployeeForm />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/employees/:id/edit" 
+              element={
+                <ProtectedRoute>
+                  <EmployeeForm />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/departments" 
+              element={
+                <ProtectedRoute>
+                  <Departments />
                 </ProtectedRoute>
               } 
             />

@@ -1,0 +1,448 @@
+import React, { useState, useEffect } from 'react';
+import { Container, Form, Button, Row, Col, Alert, Card, Spinner } from 'react-bootstrap';
+import { useNavigate, useParams } from 'react-router-dom';
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+
+interface Department {
+  id: string;
+  name: string;
+}
+
+const EmployeeForm: React.FC = () => {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditMode = !!id;
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [departments, setDepartments] = useState<Department[]>([]);
+
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    nationalId: '',
+    dateOfBirth: '',
+    hireDate: '',
+    email: '',
+    phone: '',
+    address: '',
+    jobTitle: '',
+    employmentType: 'FULL_TIME',
+    payFrequency: 'MONTHLY',
+    basicSalary: '',
+    currency: 'USD',
+    bankName: '',
+    bankAccount: '',
+    nssaNumber: '',
+    departmentId: '',
+    isActive: true
+  });
+
+  useEffect(() => {
+    fetchDepartments();
+    if (isEditMode) {
+      fetchEmployee();
+    }
+  }, [id]);
+
+  const fetchDepartments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/departments`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDepartments(response.data.departments);
+    } catch (err) {
+      console.error('Failed to fetch departments:', err);
+    }
+  };
+
+  const fetchEmployee = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/employees/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const employee = response.data.employee;
+      setFormData({
+        firstName: employee.firstName || '',
+        lastName: employee.lastName || '',
+        nationalId: employee.nationalId || '',
+        dateOfBirth: employee.dateOfBirth ? employee.dateOfBirth.split('T')[0] : '',
+        hireDate: employee.hireDate ? employee.hireDate.split('T')[0] : '',
+        email: employee.email || '',
+        phone: employee.phone || '',
+        address: employee.address || '',
+        jobTitle: employee.jobTitle || '',
+        employmentType: employee.employmentType || 'FULL_TIME',
+        payFrequency: employee.payFrequency || 'MONTHLY',
+        basicSalary: employee.basicSalary?.toString() || '',
+        currency: employee.currency || 'USD',
+        bankName: employee.bankName || '',
+        bankAccount: employee.bankAccount || '',
+        nssaNumber: employee.nssaNumber || '',
+        departmentId: employee.departmentId || '',
+        isActive: employee.isActive
+      });
+      setLoading(false);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to fetch employee');
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const payload = {
+        ...formData,
+        basicSalary: parseFloat(formData.basicSalary) || 0,
+        dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString() : null,
+        hireDate: formData.hireDate ? new Date(formData.hireDate).toISOString() : null,
+        departmentId: formData.departmentId || null
+      };
+
+      if (isEditMode) {
+        await axios.put(`${API_URL}/employees/${id}`, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setSuccess('Employee updated successfully!');
+      } else {
+        await axios.post(`${API_URL}/employees`, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setSuccess('Employee created successfully!');
+      }
+
+      setTimeout(() => navigate('/employees'), 1500);
+    } catch (err: any) {
+      setError(err.response?.data?.error || `Failed to ${isEditMode ? 'update' : 'create'} employee`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading && isEditMode) {
+    return (
+      <Container className="mt-5 text-center">
+        <Spinner animation="border" />
+        <p className="mt-2">Loading employee...</p>
+      </Container>
+    );
+  }
+
+  return (
+    <Container className="mt-4 mb-5">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>{isEditMode ? 'Edit Employee' : 'Add New Employee'}</h2>
+        <Button variant="outline-secondary" onClick={() => navigate('/employees')}>
+          Back to List
+        </Button>
+      </div>
+
+      {error && <Alert variant="danger" dismissible onClose={() => setError('')}>{error}</Alert>}
+      {success && <Alert variant="success">{success}</Alert>}
+
+      <Form onSubmit={handleSubmit}>
+        {/* Personal Information */}
+        <Card className="mb-4">
+          <Card.Header className="bg-dark text-white">
+            <h5 className="mb-0">Personal Information</h5>
+          </Card.Header>
+          <Card.Body>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>First Name *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Last Name *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>National ID</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="nationalId"
+                    value={formData.nationalId}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Date of Birth</Form.Label>
+                  <Form.Control
+                    type="date"
+                    name="dateOfBirth"
+                    value={formData.dateOfBirth}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Email</Form.Label>
+                  <Form.Control
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Phone</Form.Label>
+                  <Form.Control
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Address</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={2}
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+              />
+            </Form.Group>
+          </Card.Body>
+        </Card>
+
+        {/* Employment Information */}
+        <Card className="mb-4">
+          <Card.Header className="bg-dark text-white">
+            <h5 className="mb-0">Employment Information</h5>
+          </Card.Header>
+          <Card.Body>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Job Title *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="jobTitle"
+                    value={formData.jobTitle}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Department</Form.Label>
+                  <Form.Select
+                    name="departmentId"
+                    value={formData.departmentId}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select Department</option>
+                    {departments.map(dept => (
+                      <option key={dept.id} value={dept.id}>{dept.name}</option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Employment Type *</Form.Label>
+                  <Form.Select
+                    name="employmentType"
+                    value={formData.employmentType}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="FULL_TIME">Full Time</option>
+                    <option value="PART_TIME">Part Time</option>
+                    <option value="CONTRACT">Contract</option>
+                    <option value="CASUAL">Casual</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Hire Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    name="hireDate"
+                    value={formData.hireDate}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Form.Group className="mb-3">
+              <Form.Check
+                type="checkbox"
+                name="isActive"
+                label="Active Employee"
+                checked={formData.isActive}
+                onChange={handleChange}
+              />
+            </Form.Group>
+          </Card.Body>
+        </Card>
+
+        {/* Compensation */}
+        <Card className="mb-4">
+          <Card.Header className="bg-dark text-white">
+            <h5 className="mb-0">Compensation</h5>
+          </Card.Header>
+          <Card.Body>
+            <Row>
+              <Col md={4}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Basic Salary *</Form.Label>
+                  <Form.Control
+                    type="number"
+                    step="0.01"
+                    name="basicSalary"
+                    value={formData.basicSalary}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Currency *</Form.Label>
+                  <Form.Select
+                    name="currency"
+                    value={formData.currency}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="USD">USD</option>
+                    <option value="ZWL">ZWL</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Pay Frequency *</Form.Label>
+                  <Form.Select
+                    name="payFrequency"
+                    value={formData.payFrequency}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="WEEKLY">Weekly</option>
+                    <option value="FORTNIGHTLY">Fortnightly</option>
+                    <option value="MONTHLY">Monthly</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
+
+        {/* Banking & Statutory */}
+        <Card className="mb-4">
+          <Card.Header className="bg-dark text-white">
+            <h5 className="mb-0">Banking & Statutory Information</h5>
+          </Card.Header>
+          <Card.Body>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Bank Name</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="bankName"
+                    value={formData.bankName}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Bank Account Number</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="bankAccount"
+                    value={formData.bankAccount}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Form.Group className="mb-3">
+              <Form.Label>NSSA Number</Form.Label>
+              <Form.Control
+                type="text"
+                name="nssaNumber"
+                value={formData.nssaNumber}
+                onChange={handleChange}
+              />
+            </Form.Group>
+          </Card.Body>
+        </Card>
+
+        <div className="d-flex gap-2">
+          <Button variant="dark" type="submit" disabled={loading}>
+            {loading ? 'Saving...' : (isEditMode ? 'Update Employee' : 'Create Employee')}
+          </Button>
+          <Button variant="outline-secondary" onClick={() => navigate('/employees')}>
+            Cancel
+          </Button>
+        </div>
+      </Form>
+    </Container>
+  );
+};
+
+export default EmployeeForm;

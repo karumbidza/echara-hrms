@@ -18,6 +18,7 @@ const Navigation: React.FC = () => {
               <>
                 <Nav.Link href="/dashboard">Dashboard</Nav.Link>
                 <Nav.Link href="/employees">Employees</Nav.Link>
+                <Nav.Link href="/departments">Departments</Nav.Link>
                 <Nav.Link href="/payroll">Payroll</Nav.Link>
               </>
             )}
