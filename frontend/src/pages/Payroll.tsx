@@ -516,234 +516,300 @@ const Payroll: React.FC = () => {
                         
                         {isExpanded && isSelected && (
                           <tr>
-                            <td colSpan={9} style={{ backgroundColor: '#f8f9fa' }}>
+                            <td colSpan={9} style={{ backgroundColor: '#f8f9fa', padding: 0 }}>
                               <div className="p-4">
-                                <h5 className="mb-4 text-center">Earnings & Deductions for {employee.firstName} {employee.lastName}</h5>
-                                <div className="row g-4">
-                                  {/* Earnings Section */}
-                                  <div className="col-md-4">
-                                    <h6 className="text-success mb-3">📈 Earnings (Taxable)</h6>
-                                    <div className="row g-3 mb-2">
-                                      <div className="col-6">
-                                        <label className="form-label small">Housing Allowance</label>
-                                        <input
-                                          type="number"
-                                          className="form-control form-control-sm"
-                                          value={inputs?.housingAllowance || ''}
-                                          onChange={(e) => handleInputChange(employee.id, 'housingAllowance', e.target.value)}
-                                          min="0"
-                                          step="0.01"
-                                          placeholder="0.00"
-                                        />
-                                      </div>
-                                      <div className="col-6">
-                                        <label className="form-label small">Transport Allowance</label>
-                                        <input
-                                          type="number"
-                                          className="form-control form-control-sm"
-                                          value={inputs?.transportAllowance || ''}
-                                          onChange={(e) => handleInputChange(employee.id, 'transportAllowance', e.target.value)}
-                                          min="0"
-                                          step="0.01"
-                                          placeholder="0.00"
-                                        />
-                                      </div>
-                                      <div className="col-6">
-                                        <label className="form-label small">Meal Allowance</label>
-                                        <input
-                                          type="number"
-                                          className="form-control form-control-sm"
-                                          value={inputs?.mealAllowance || ''}
-                                          onChange={(e) => handleInputChange(employee.id, 'mealAllowance', e.target.value)}
-                                          min="0"
-                                          step="0.01"
-                                          placeholder="0.00"
-                                        />
-                                      </div>
-                                      <div className="col-6">
-                                        <label className="form-label small">Other Allowances</label>
-                                        <input
-                                          type="number"
-                                          className="form-control form-control-sm"
-                                          value={inputs?.otherAllowances || ''}
-                                          onChange={(e) => handleInputChange(employee.id, 'otherAllowances', e.target.value)}
-                                          min="0"
-                                          step="0.01"
-                                          placeholder="0.00"
-                                        />
-                                      </div>
-                                      <div className="col-6">
-                                        <label className="form-label small">Overtime Pay</label>
-                                        <input
-                                          type="number"
-                                          className="form-control form-control-sm"
-                                          value={inputs?.overtimePay || ''}
-                                          onChange={(e) => handleInputChange(employee.id, 'overtimePay', e.target.value)}
-                                          min="0"
-                                          step="0.01"
-                                          placeholder="0.00"
-                                        />
-                                      </div>
-                                      <div className="col-6">
-                                        <label className="form-label small">Bonus</label>
-                                        <input
-                                          type="number"
-                                          className="form-control form-control-sm"
-                                          value={inputs?.bonus || ''}
-                                          onChange={(e) => handleInputChange(employee.id, 'bonus', e.target.value)}
-                                          min="0"
-                                          step="0.01"
-                                          placeholder="0.00"
-                                        />
-                                      </div>
-                                      <div className="col-6">
-                                        <label className="form-label small">Commission</label>
-                                        <input
-                                          type="number"
-                                          className="form-control form-control-sm"
-                                          value={inputs?.commission || ''}
-                                          onChange={(e) => handleInputChange(employee.id, 'commission', e.target.value)}
-                                          min="0"
-                                          step="0.01"
-                                          placeholder="0.00"
-                                        />
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* Deductions Section */}
-                                  <div className="col-md-6">
-                                    <h6 className="text-warning">📉 Pre-tax Deductions (Reduce Taxable Income)</h6>
-                                    <div className="row g-2 mb-3">
-                                      <div className="col-6">
-                                        <label className="form-label small">Pension Contribution</label>
-                                        <input
-                                          type="number"
-                                          className="form-control form-control-sm"
-                                          value={inputs?.pensionContribution || ''}
-                                          onChange={(e) => handleInputChange(employee.id, 'pensionContribution', e.target.value)}
-                                          min="0"
-                                          step="0.01"
-                                          placeholder="0.00"
-                                        />
-                                      </div>
-                                      <div className="col-6">
-                                        <label className="form-label small">Medical Aid</label>
-                                        <input
-                                          type="number"
-                                          className="form-control form-control-sm"
-                                          value={inputs?.medicalAid || ''}
-                                          onChange={(e) => handleInputChange(employee.id, 'medicalAid', e.target.value)}
-                                          min="0"
-                                          step="0.01"
-                                          placeholder="0.00"
-                                        />
-                                      </div>
-                                    </div>
-
-                                    <h6 className="text-danger">💸 Post-tax Deductions</h6>
-                                    <div className="row g-2">
-                                      <div className="col-6">
-                                        <label className="form-label small">Loan Repayment</label>
-                                        <input
-                                          type="number"
-                                          className="form-control form-control-sm"
-                                          value={inputs?.loanRepayment || ''}
-                                          onChange={(e) => handleInputChange(employee.id, 'loanRepayment', e.target.value)}
-                                          min="0"
-                                          step="0.01"
-                                          placeholder="0.00"
-                                        />
-                                      </div>
-                                      <div className="col-6">
-                                        <label className="form-label small">Salary Advance</label>
-                                        <input
-                                          type="number"
-                                          className="form-control form-control-sm"
-                                          value={inputs?.salaryAdvance || ''}
-                                          onChange={(e) => handleInputChange(employee.id, 'salaryAdvance', e.target.value)}
-                                          min="0"
-                                          step="0.01"
-                                          placeholder="0.00"
-                                        />
-                                      </div>
-                                      <div className="col-6">
-                                        <label className="form-label small">Other Deductions</label>
-                                        <input
-                                          type="number"
-                                          className="form-control form-control-sm"
-                                          value={inputs?.otherDeductions || ''}
-                                          onChange={(e) => handleInputChange(employee.id, 'otherDeductions', e.target.value)}
-                                          min="0"
-                                          step="0.01"
-                                          placeholder="0.00"
-                                        />
-                                      </div>
-                                    </div>
-                                  </div>
+                                <div className="d-flex justify-content-between align-items-center mb-4">
+                                  <h5 className="mb-0">Earnings & Deductions for {employee.firstName} {employee.lastName}</h5>
+                                  <span className="badge bg-secondary">{employee.employeeNumber}</span>
                                 </div>
+                                
+                                <div className="row g-4">
+                                  {/* LEFT: Allowances (Monthly Recurring) */}
+                                  <div className="col-lg-4">
+                                    <div className="card border-0 shadow-sm h-100">
+                                      <div className="card-header bg-success text-white">
+                                        <h6 className="mb-0">💰 Monthly Allowances</h6>
+                                        <small className="opacity-75">Recurring earnings (from employee defaults)</small>
+                                      </div>
+                                      <div className="card-body">
+                                        <div className="mb-3">
+                                          <label className="form-label fw-semibold small text-muted">Housing Allowance</label>
+                                          <div className="input-group input-group-sm">
+                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <input
+                                              type="number"
+                                              className="form-control"
+                                              value={inputs?.housingAllowance || ''}
+                                              onChange={(e) => handleInputChange(employee.id, 'housingAllowance', e.target.value)}
+                                              min="0"
+                                              step="0.01"
+                                              placeholder="0.00"
+                                            />
+                                          </div>
+                                        </div>
+                                        <div className="mb-3">
+                                          <label className="form-label fw-semibold small text-muted">Transport Allowance</label>
+                                          <div className="input-group input-group-sm">
+                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <input
+                                              type="number"
+                                              className="form-control"
+                                              value={inputs?.transportAllowance || ''}
+                                              onChange={(e) => handleInputChange(employee.id, 'transportAllowance', e.target.value)}
+                                              min="0"
+                                              step="0.01"
+                                              placeholder="0.00"
+                                            />
+                                          </div>
+                                        </div>
+                                        <div className="mb-3">
+                                          <label className="form-label fw-semibold small text-muted">Meal Allowance</label>
+                                          <div className="input-group input-group-sm">
+                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <input
+                                              type="number"
+                                              className="form-control"
+                                              value={inputs?.mealAllowance || ''}
+                                              onChange={(e) => handleInputChange(employee.id, 'mealAllowance', e.target.value)}
+                                              min="0"
+                                              step="0.01"
+                                              placeholder="0.00"
+                                            />
+                                          </div>
+                                        </div>
+                                        <div className="mb-3">
+                                          <label className="form-label fw-semibold small text-muted">Other Allowances</label>
+                                          <div className="input-group input-group-sm">
+                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <input
+                                              type="number"
+                                              className="form-control"
+                                              value={inputs?.otherAllowances || ''}
+                                              onChange={(e) => handleInputChange(employee.id, 'otherAllowances', e.target.value)}
+                                              min="0"
+                                              step="0.01"
+                                              placeholder="0.00"
+                                            />
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
 
-                                <div className="mt-4 p-3 bg-white border rounded shadow-sm">
-                                  <h6 className="text-center mb-3">📊 Payroll Summary</h6>
-                                  <div className="row g-3">
-                                    <div className="col-3 text-center">
-                                      <small className="text-muted d-block">Gross Earnings</small>
-                                      <div className="h5 mb-0 text-success">{employee.contractCurrency} {totals.gross.toFixed(2)}</div>
+                                  {/* MIDDLE: Variable Pay + Deductions */}
+                                  <div className="col-lg-4">
+                                    <div className="card border-0 shadow-sm mb-3">
+                                      <div className="card-header bg-primary text-white">
+                                        <h6 className="mb-0">📈 Variable Pay</h6>
+                                        <small className="opacity-75">One-time or irregular earnings</small>
+                                      </div>
+                                      <div className="card-body">
+                                        <div className="mb-3">
+                                          <label className="form-label fw-semibold small text-muted">Overtime Pay</label>
+                                          <div className="input-group input-group-sm">
+                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <input
+                                              type="number"
+                                              className="form-control"
+                                              value={inputs?.overtimePay || ''}
+                                              onChange={(e) => handleInputChange(employee.id, 'overtimePay', e.target.value)}
+                                              min="0"
+                                              step="0.01"
+                                              placeholder="0.00"
+                                            />
+                                          </div>
+                                        </div>
+                                        <div className="mb-3">
+                                          <label className="form-label fw-semibold small text-muted">Bonus</label>
+                                          <div className="input-group input-group-sm">
+                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <input
+                                              type="number"
+                                              className="form-control"
+                                              value={inputs?.bonus || ''}
+                                              onChange={(e) => handleInputChange(employee.id, 'bonus', e.target.value)}
+                                              min="0"
+                                              step="0.01"
+                                              placeholder="0.00"
+                                            />
+                                          </div>
+                                        </div>
+                                        <div className="mb-3">
+                                          <label className="form-label fw-semibold small text-muted">Commission</label>
+                                          <div className="input-group input-group-sm">
+                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <input
+                                              type="number"
+                                              className="form-control"
+                                              value={inputs?.commission || ''}
+                                              onChange={(e) => handleInputChange(employee.id, 'commission', e.target.value)}
+                                              min="0"
+                                              step="0.01"
+                                              placeholder="0.00"
+                                            />
+                                          </div>
+                                        </div>
+                                      </div>
                                     </div>
-                                    <div className="col-3 text-center">
-                                      <small className="text-muted d-block">Pre-tax Ded.</small>
-                                      <div className="h5 mb-0 text-warning">-{employee.contractCurrency} {totals.preTaxDeductions.toFixed(2)}</div>
-                                    </div>
-                                    <div className="col-3 text-center border-start">
-                                      <small className="text-muted d-block">Taxable Income</small>
-                                      <div className="h5 mb-0 text-primary">{employee.contractCurrency} {totals.taxable.toFixed(2)}</div>
-                                    </div>
-                                    <div className="col-3 text-center border-start">
-                                      <small className="text-muted d-block">Est. Net Pay</small>
-                                      <div className="h4 mb-0 text-success"><strong>{employee.contractCurrency} {fullPayroll.netPay.toFixed(2)}</strong></div>
+
+                                    <div className="card border-0 shadow-sm">
+                                      <div className="card-header bg-warning text-dark">
+                                        <h6 className="mb-0">📉 Deductions</h6>
+                                        <small className="opacity-75">All deductions (pre-tax & post-tax)</small>
+                                      </div>
+                                      <div className="card-body">
+                                        <div className="mb-2">
+                                          <small className="text-muted fw-semibold d-block mb-2">PRE-TAX (Reduce Taxable Income)</small>
+                                        </div>
+                                        <div className="mb-3">
+                                          <label className="form-label fw-semibold small text-muted">Pension Contribution</label>
+                                          <div className="input-group input-group-sm">
+                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <input
+                                              type="number"
+                                              className="form-control"
+                                              value={inputs?.pensionContribution || ''}
+                                              onChange={(e) => handleInputChange(employee.id, 'pensionContribution', e.target.value)}
+                                              min="0"
+                                              step="0.01"
+                                              placeholder="0.00"
+                                            />
+                                          </div>
+                                        </div>
+                                        <div className="mb-3">
+                                          <label className="form-label fw-semibold small text-muted">Medical Aid</label>
+                                          <div className="input-group input-group-sm">
+                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <input
+                                              type="number"
+                                              className="form-control"
+                                              value={inputs?.medicalAid || ''}
+                                              onChange={(e) => handleInputChange(employee.id, 'medicalAid', e.target.value)}
+                                              min="0"
+                                              step="0.01"
+                                              placeholder="0.00"
+                                            />
+                                          </div>
+                                        </div>
+                                        
+                                        <div className="mb-2 mt-3 pt-2 border-top">
+                                          <small className="text-muted fw-semibold d-block mb-2">POST-TAX</small>
+                                        </div>
+                                        <div className="mb-3">
+                                          <label className="form-label fw-semibold small text-muted">Loan Repayment</label>
+                                          <div className="input-group input-group-sm">
+                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <input
+                                              type="number"
+                                              className="form-control"
+                                              value={inputs?.loanRepayment || ''}
+                                              onChange={(e) => handleInputChange(employee.id, 'loanRepayment', e.target.value)}
+                                              min="0"
+                                              step="0.01"
+                                              placeholder="0.00"
+                                            />
+                                          </div>
+                                        </div>
+                                        <div className="mb-3">
+                                          <label className="form-label fw-semibold small text-muted">Salary Advance</label>
+                                          <div className="input-group input-group-sm">
+                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <input
+                                              type="number"
+                                              className="form-control"
+                                              value={inputs?.salaryAdvance || ''}
+                                              onChange={(e) => handleInputChange(employee.id, 'salaryAdvance', e.target.value)}
+                                              min="0"
+                                              step="0.01"
+                                              placeholder="0.00"
+                                            />
+                                          </div>
+                                        </div>
+                                        <div className="mb-3">
+                                          <label className="form-label fw-semibold small text-muted">Other Deductions</label>
+                                          <div className="input-group input-group-sm">
+                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <input
+                                              type="number"
+                                              className="form-control"
+                                              value={inputs?.otherDeductions || ''}
+                                              onChange={(e) => handleInputChange(employee.id, 'otherDeductions', e.target.value)}
+                                              min="0"
+                                              step="0.01"
+                                              placeholder="0.00"
+                                            />
+                                          </div>
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
-                                  <hr className="my-3"/>
-                                  <div className="row g-2 small">
-                                    <div className="col-6">
-                                      <div className="d-flex justify-content-between">
-                                        <span className="text-muted">PAYE:</span>
-                                        <strong>{employee.contractCurrency} {fullPayroll.paye.toFixed(2)}</strong>
+
+                                  {/* RIGHT: Live Calculation Summary */}
+                                  <div className="col-lg-4">
+                                    <div className="card border-0 shadow-sm sticky-top" style={{ top: '20px' }}>
+                                      <div className="card-header bg-dark text-white">
+                                        <h6 className="mb-0">📊 Payroll Breakdown</h6>
+                                        <small className="opacity-75">Live calculation preview</small>
+                                      </div>
+                                      <div className="card-body">
+                                        {/* Main Summary Numbers */}
+                                        <div className="mb-3 pb-3 border-bottom">
+                                          <div className="d-flex justify-content-between align-items-center mb-2">
+                                            <span className="text-muted small">Gross Earnings</span>
+                                            <span className="h5 mb-0 text-success fw-bold">{employee.contractCurrency} {totals.gross.toFixed(2)}</span>
+                                          </div>
+                                          <div className="d-flex justify-content-between align-items-center mb-2">
+                                            <span className="text-muted small">Pre-tax Deductions</span>
+                                            <span className="text-warning fw-semibold">-{employee.contractCurrency} {totals.preTaxDeductions.toFixed(2)}</span>
+                                          </div>
+                                          <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                                            <span className="text-muted small">Taxable Income</span>
+                                            <span className="h6 mb-0 text-primary fw-bold">{employee.contractCurrency} {totals.taxable.toFixed(2)}</span>
+                                          </div>
+                                        </div>
+
+                                        {/* Statutory Deductions */}
+                                        <div className="mb-3 pb-3 border-bottom">
+                                          <h6 className="text-muted small mb-2">STATUTORY DEDUCTIONS</h6>
+                                          <div className="d-flex justify-content-between align-items-center mb-2">
+                                            <span className="small">PAYE Tax</span>
+                                            <span className="fw-semibold">{employee.contractCurrency} {fullPayroll.paye.toFixed(2)}</span>
+                                          </div>
+                                          <div className="d-flex justify-content-between align-items-center mb-2">
+                                            <span className="small">AIDS Levy (3%)</span>
+                                            <span className="fw-semibold">{employee.contractCurrency} {fullPayroll.aidsLevy.toFixed(2)}</span>
+                                          </div>
+                                          <div className="d-flex justify-content-between align-items-center mb-2">
+                                            <span className="small">NSSA Employee (4.5%)</span>
+                                            <span className="fw-semibold">{employee.contractCurrency} {fullPayroll.nssaEmployee.toFixed(2)}</span>
+                                          </div>
+                                          <div className="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                            <span className="small text-info">💼 NSSA Employer (4.5%)</span>
+                                            <span className="fw-semibold text-info">{employee.contractCurrency} {fullPayroll.nssaEmployer.toFixed(2)}</span>
+                                          </div>
+                                          <div className="d-flex justify-content-between align-items-center mt-2">
+                                            <span className="small">Post-tax Deductions</span>
+                                            <span className="fw-semibold">{employee.contractCurrency} {fullPayroll.postTaxDeductions.toFixed(2)}</span>
+                                          </div>
+                                        </div>
+
+                                        {/* Total & Net Pay */}
+                                        <div className="bg-light p-3 rounded">
+                                          <div className="d-flex justify-content-between align-items-center mb-3">
+                                            <span className="fw-semibold">Total Deductions</span>
+                                            <span className="h6 mb-0 text-danger fw-bold">{employee.contractCurrency} {fullPayroll.totalDeductions.toFixed(2)}</span>
+                                          </div>
+                                          <div className="d-flex justify-content-between align-items-center p-3 bg-success text-white rounded">
+                                            <span className="fw-bold">NET PAY</span>
+                                            <span className="h4 mb-0 fw-bold">{employee.contractCurrency} {fullPayroll.netPay.toFixed(2)}</span>
+                                          </div>
+                                        </div>
+
+                                        <div className="alert alert-info mt-3 mb-0 small">
+                                          <strong>ℹ️ Note:</strong> Estimates only. Final calculations include YTD adjustments.
+                                        </div>
                                       </div>
                                     </div>
-                                    <div className="col-6">
-                                      <div className="d-flex justify-content-between">
-                                        <span className="text-muted">AIDS Levy:</span>
-                                        <strong>{employee.contractCurrency} {fullPayroll.aidsLevy.toFixed(2)}</strong>
-                                      </div>
-                                    </div>
-                                    <div className="col-6">
-                                      <div className="d-flex justify-content-between">
-                                        <span className="text-muted">NSSA (Employee):</span>
-                                        <strong>{employee.contractCurrency} {fullPayroll.nssaEmployee.toFixed(2)}</strong>
-                                      </div>
-                                    </div>
-                                    <div className="col-6">
-                                      <div className="d-flex justify-content-between">
-                                        <span className="text-info">NSSA (Employer):</span>
-                                        <strong className="text-info">{employee.contractCurrency} {fullPayroll.nssaEmployer.toFixed(2)}</strong>
-                                      </div>
-                                    </div>
-                                    <div className="col-6">
-                                      <div className="d-flex justify-content-between">
-                                        <span className="text-muted">Post-tax Ded.:</span>
-                                        <strong>{employee.contractCurrency} {fullPayroll.postTaxDeductions.toFixed(2)}</strong>
-                                      </div>
-                                    </div>
-                                    <div className="col-6">
-                                      <div className="d-flex justify-content-between">
-                                        <span className="text-muted">Total Deductions:</span>
-                                        <strong className="text-danger">{employee.contractCurrency} {fullPayroll.totalDeductions.toFixed(2)}</strong>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="alert alert-info mt-3 mb-0 small">
-                                    <strong>ℹ️ Note:</strong> These are estimates. Final amounts will be calculated when payroll is processed with YTD adjustments.
                                   </div>
                                 </div>
                               </div>
