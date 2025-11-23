@@ -152,15 +152,34 @@ async function seedPayrollData(tenantId: string) {
 }
 
 // Run the seed function
-const tenantId = process.argv[2];
+async function main() {
+  let tenantId = process.argv[2];
 
-if (!tenantId) {
-  console.error('❌ Error: Please provide a tenant ID');
-  console.error('Usage: npx ts-node src/utils/seedPayrollData.ts <tenantId>');
-  process.exit(1);
+  // If no tenant ID provided, find or create a default tenant
+  if (!tenantId) {
+    console.log('No tenant ID provided, looking for or creating default tenant...');
+    
+    const existingTenant = await prisma.tenant.findFirst();
+    
+    if (existingTenant) {
+      tenantId = existingTenant.id;
+      console.log(`✅ Found existing tenant: ${existingTenant.name} (${tenantId})`);
+    } else {
+      const newTenant = await prisma.tenant.create({
+        data: {
+          name: 'Default Tenant',
+          slug: 'default'
+        }
+      });
+      tenantId = newTenant.id;
+      console.log(`✅ Created new tenant: ${newTenant.name} (${tenantId})`);
+    }
+  }
+
+  await seedPayrollData(tenantId);
 }
 
-seedPayrollData(tenantId)
+main()
   .catch((error) => {
     console.error('❌ Error seeding payroll data:', error);
     process.exit(1);
