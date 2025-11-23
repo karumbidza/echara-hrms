@@ -518,24 +518,24 @@ const Payroll: React.FC = () => {
                           <tr>
                             <td colSpan={9} style={{ backgroundColor: '#f8f9fa', padding: 0 }}>
                               <div className="p-4">
-                                <div className="d-flex justify-content-between align-items-center mb-4">
-                                  <h5 className="mb-0">Earnings & Deductions for {employee.firstName} {employee.lastName}</h5>
-                                  <span className="badge bg-secondary">{employee.employeeNumber}</span>
+                                <div className="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                                  <h5 className="mb-0 fw-bold">Payroll Details: {employee.firstName} {employee.lastName}</h5>
+                                  <span className="badge bg-dark">{employee.employeeNumber}</span>
                                 </div>
                                 
                                 <div className="row g-4">
                                   {/* LEFT: Allowances (Monthly Recurring) */}
                                   <div className="col-lg-4">
-                                    <div className="card border-0 shadow-sm h-100">
-                                      <div className="card-header bg-success text-white">
-                                        <h6 className="mb-0">💰 Monthly Allowances</h6>
-                                        <small className="opacity-75">Recurring earnings (from employee defaults)</small>
+                                    <div className="card border h-100">
+                                      <div className="card-header bg-light border-bottom">
+                                        <h6 className="mb-0 fw-semibold">Monthly Allowances</h6>
+                                        <small className="text-muted">Recurring earnings from employee defaults</small>
                                       </div>
                                       <div className="card-body">
                                         <div className="mb-3">
-                                          <label className="form-label fw-semibold small text-muted">Housing Allowance</label>
+                                          <label className="form-label fw-semibold small text-muted text-uppercase">Housing Allowance</label>
                                           <div className="input-group input-group-sm">
-                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <span className="input-group-text bg-light">{employee.contractCurrency}</span>
                                             <input
                                               type="number"
                                               className="form-control"
@@ -548,9 +548,9 @@ const Payroll: React.FC = () => {
                                           </div>
                                         </div>
                                         <div className="mb-3">
-                                          <label className="form-label fw-semibold small text-muted">Transport Allowance</label>
+                                          <label className="form-label fw-semibold small text-muted text-uppercase">Transport Allowance</label>
                                           <div className="input-group input-group-sm">
-                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <span className="input-group-text bg-light">{employee.contractCurrency}</span>
                                             <input
                                               type="number"
                                               className="form-control"
@@ -563,9 +563,9 @@ const Payroll: React.FC = () => {
                                           </div>
                                         </div>
                                         <div className="mb-3">
-                                          <label className="form-label fw-semibold small text-muted">Meal Allowance</label>
+                                          <label className="form-label fw-semibold small text-muted text-uppercase">Meal Allowance</label>
                                           <div className="input-group input-group-sm">
-                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <span className="input-group-text bg-light">{employee.contractCurrency}</span>
                                             <input
                                               type="number"
                                               className="form-control"
@@ -577,10 +577,10 @@ const Payroll: React.FC = () => {
                                             />
                                           </div>
                                         </div>
-                                        <div className="mb-3">
-                                          <label className="form-label fw-semibold small text-muted">Other Allowances</label>
+                                        <div className="mb-0">
+                                          <label className="form-label fw-semibold small text-muted text-uppercase">Other Allowances</label>
                                           <div className="input-group input-group-sm">
-                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <span className="input-group-text bg-light">{employee.contractCurrency}</span>
                                             <input
                                               type="number"
                                               className="form-control"
@@ -598,16 +598,16 @@ const Payroll: React.FC = () => {
 
                                   {/* MIDDLE: Variable Pay + Deductions */}
                                   <div className="col-lg-4">
-                                    <div className="card border-0 shadow-sm mb-3">
-                                      <div className="card-header bg-primary text-white">
-                                        <h6 className="mb-0">📈 Variable Pay</h6>
-                                        <small className="opacity-75">One-time or irregular earnings</small>
+                                    <div className="card border mb-3">
+                                      <div className="card-header bg-light border-bottom">
+                                        <h6 className="mb-0 fw-semibold">Variable Pay</h6>
+                                        <small className="text-muted">One-time or irregular earnings</small>
                                       </div>
                                       <div className="card-body">
                                         <div className="mb-3">
-                                          <label className="form-label fw-semibold small text-muted">Overtime Pay</label>
+                                          <label className="form-label fw-semibold small text-muted text-uppercase">Overtime Pay</label>
                                           <div className="input-group input-group-sm">
-                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <span className="input-group-text bg-light">{employee.contractCurrency}</span>
                                             <input
                                               type="number"
                                               className="form-control"
@@ -620,9 +620,9 @@ const Payroll: React.FC = () => {
                                           </div>
                                         </div>
                                         <div className="mb-3">
-                                          <label className="form-label fw-semibold small text-muted">Bonus</label>
+                                          <label className="form-label fw-semibold small text-muted text-uppercase">Bonus</label>
                                           <div className="input-group input-group-sm">
-                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <span className="input-group-text bg-light">{employee.contractCurrency}</span>
                                             <input
                                               type="number"
                                               className="form-control"
@@ -634,10 +634,10 @@ const Payroll: React.FC = () => {
                                             />
                                           </div>
                                         </div>
-                                        <div className="mb-3">
-                                          <label className="form-label fw-semibold small text-muted">Commission</label>
+                                        <div className="mb-0">
+                                          <label className="form-label fw-semibold small text-muted text-uppercase">Commission</label>
                                           <div className="input-group input-group-sm">
-                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <span className="input-group-text bg-light">{employee.contractCurrency}</span>
                                             <input
                                               type="number"
                                               className="form-control"
@@ -652,19 +652,19 @@ const Payroll: React.FC = () => {
                                       </div>
                                     </div>
 
-                                    <div className="card border-0 shadow-sm">
-                                      <div className="card-header bg-warning text-dark">
-                                        <h6 className="mb-0">📉 Deductions</h6>
-                                        <small className="opacity-75">All deductions (pre-tax & post-tax)</small>
+                                    <div className="card border">
+                                      <div className="card-header bg-light border-bottom">
+                                        <h6 className="mb-0 fw-semibold">Deductions</h6>
+                                        <small className="text-muted">Pre-tax and post-tax deductions</small>
                                       </div>
                                       <div className="card-body">
-                                        <div className="mb-2">
-                                          <small className="text-muted fw-semibold d-block mb-2">PRE-TAX (Reduce Taxable Income)</small>
+                                        <div className="mb-2 pb-2 border-bottom">
+                                          <small className="text-muted fw-bold d-block text-uppercase" style={{fontSize: '0.7rem'}}>Pre-tax (Reduce Taxable Income)</small>
                                         </div>
                                         <div className="mb-3">
-                                          <label className="form-label fw-semibold small text-muted">Pension Contribution</label>
+                                          <label className="form-label fw-semibold small text-muted text-uppercase">Pension Contribution</label>
                                           <div className="input-group input-group-sm">
-                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <span className="input-group-text bg-light">{employee.contractCurrency}</span>
                                             <input
                                               type="number"
                                               className="form-control"
@@ -677,9 +677,9 @@ const Payroll: React.FC = () => {
                                           </div>
                                         </div>
                                         <div className="mb-3">
-                                          <label className="form-label fw-semibold small text-muted">Medical Aid</label>
+                                          <label className="form-label fw-semibold small text-muted text-uppercase">Medical Aid</label>
                                           <div className="input-group input-group-sm">
-                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <span className="input-group-text bg-light">{employee.contractCurrency}</span>
                                             <input
                                               type="number"
                                               className="form-control"
@@ -692,13 +692,13 @@ const Payroll: React.FC = () => {
                                           </div>
                                         </div>
                                         
-                                        <div className="mb-2 mt-3 pt-2 border-top">
-                                          <small className="text-muted fw-semibold d-block mb-2">POST-TAX</small>
+                                        <div className="mb-2 pb-2 border-top border-bottom pt-3">
+                                          <small className="text-muted fw-bold d-block text-uppercase" style={{fontSize: '0.7rem'}}>Post-tax</small>
                                         </div>
                                         <div className="mb-3">
-                                          <label className="form-label fw-semibold small text-muted">Loan Repayment</label>
+                                          <label className="form-label fw-semibold small text-muted text-uppercase">Loan Repayment</label>
                                           <div className="input-group input-group-sm">
-                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <span className="input-group-text bg-light">{employee.contractCurrency}</span>
                                             <input
                                               type="number"
                                               className="form-control"
@@ -711,9 +711,9 @@ const Payroll: React.FC = () => {
                                           </div>
                                         </div>
                                         <div className="mb-3">
-                                          <label className="form-label fw-semibold small text-muted">Salary Advance</label>
+                                          <label className="form-label fw-semibold small text-muted text-uppercase">Salary Advance</label>
                                           <div className="input-group input-group-sm">
-                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <span className="input-group-text bg-light">{employee.contractCurrency}</span>
                                             <input
                                               type="number"
                                               className="form-control"
@@ -725,10 +725,10 @@ const Payroll: React.FC = () => {
                                             />
                                           </div>
                                         </div>
-                                        <div className="mb-3">
-                                          <label className="form-label fw-semibold small text-muted">Other Deductions</label>
+                                        <div className="mb-0">
+                                          <label className="form-label fw-semibold small text-muted text-uppercase">Other Deductions</label>
                                           <div className="input-group input-group-sm">
-                                            <span className="input-group-text">{employee.contractCurrency}</span>
+                                            <span className="input-group-text bg-light">{employee.contractCurrency}</span>
                                             <input
                                               type="number"
                                               className="form-control"
@@ -746,31 +746,31 @@ const Payroll: React.FC = () => {
 
                                   {/* RIGHT: Live Calculation Summary */}
                                   <div className="col-lg-4">
-                                    <div className="card border-0 shadow-sm sticky-top" style={{ top: '20px' }}>
-                                      <div className="card-header bg-dark text-white">
-                                        <h6 className="mb-0">📊 Payroll Breakdown</h6>
-                                        <small className="opacity-75">Live calculation preview</small>
+                                    <div className="card border sticky-top" style={{ top: '20px' }}>
+                                      <div className="card-header bg-dark text-white border-0">
+                                        <h6 className="mb-0 fw-semibold">Payroll Calculation</h6>
+                                        <small className="opacity-75">Live preview</small>
                                       </div>
                                       <div className="card-body">
                                         {/* Main Summary Numbers */}
                                         <div className="mb-3 pb-3 border-bottom">
                                           <div className="d-flex justify-content-between align-items-center mb-2">
-                                            <span className="text-muted small">Gross Earnings</span>
-                                            <span className="h5 mb-0 text-success fw-bold">{employee.contractCurrency} {totals.gross.toFixed(2)}</span>
+                                            <span className="text-muted small text-uppercase fw-semibold">Gross Earnings</span>
+                                            <span className="h5 mb-0 fw-bold">{employee.contractCurrency} {totals.gross.toFixed(2)}</span>
                                           </div>
                                           <div className="d-flex justify-content-between align-items-center mb-2">
                                             <span className="text-muted small">Pre-tax Deductions</span>
-                                            <span className="text-warning fw-semibold">-{employee.contractCurrency} {totals.preTaxDeductions.toFixed(2)}</span>
+                                            <span className="fw-semibold">-{employee.contractCurrency} {totals.preTaxDeductions.toFixed(2)}</span>
                                           </div>
                                           <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
-                                            <span className="text-muted small">Taxable Income</span>
-                                            <span className="h6 mb-0 text-primary fw-bold">{employee.contractCurrency} {totals.taxable.toFixed(2)}</span>
+                                            <span className="text-muted small text-uppercase fw-semibold">Taxable Income</span>
+                                            <span className="h6 mb-0 fw-bold">{employee.contractCurrency} {totals.taxable.toFixed(2)}</span>
                                           </div>
                                         </div>
 
                                         {/* Statutory Deductions */}
                                         <div className="mb-3 pb-3 border-bottom">
-                                          <h6 className="text-muted small mb-2">STATUTORY DEDUCTIONS</h6>
+                                          <h6 className="text-muted small mb-2 fw-bold text-uppercase" style={{fontSize: '0.7rem'}}>Statutory Deductions</h6>
                                           <div className="d-flex justify-content-between align-items-center mb-2">
                                             <span className="small">PAYE Tax</span>
                                             <span className="fw-semibold">{employee.contractCurrency} {fullPayroll.paye.toFixed(2)}</span>
@@ -784,8 +784,8 @@ const Payroll: React.FC = () => {
                                             <span className="fw-semibold">{employee.contractCurrency} {fullPayroll.nssaEmployee.toFixed(2)}</span>
                                           </div>
                                           <div className="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                                            <span className="small text-info">💼 NSSA Employer (4.5%)</span>
-                                            <span className="fw-semibold text-info">{employee.contractCurrency} {fullPayroll.nssaEmployer.toFixed(2)}</span>
+                                            <span className="small fw-semibold">NSSA Employer (4.5%)</span>
+                                            <span className="fw-bold">{employee.contractCurrency} {fullPayroll.nssaEmployer.toFixed(2)}</span>
                                           </div>
                                           <div className="d-flex justify-content-between align-items-center mt-2">
                                             <span className="small">Post-tax Deductions</span>
@@ -794,19 +794,19 @@ const Payroll: React.FC = () => {
                                         </div>
 
                                         {/* Total & Net Pay */}
-                                        <div className="bg-light p-3 rounded">
+                                        <div className="bg-light border p-3 rounded">
                                           <div className="d-flex justify-content-between align-items-center mb-3">
-                                            <span className="fw-semibold">Total Deductions</span>
-                                            <span className="h6 mb-0 text-danger fw-bold">{employee.contractCurrency} {fullPayroll.totalDeductions.toFixed(2)}</span>
+                                            <span className="fw-semibold text-uppercase small">Total Deductions</span>
+                                            <span className="h6 mb-0 fw-bold">{employee.contractCurrency} {fullPayroll.totalDeductions.toFixed(2)}</span>
                                           </div>
-                                          <div className="d-flex justify-content-between align-items-center p-3 bg-success text-white rounded">
-                                            <span className="fw-bold">NET PAY</span>
+                                          <div className="d-flex justify-content-between align-items-center p-3 bg-dark text-white rounded">
+                                            <span className="fw-bold text-uppercase">Net Pay</span>
                                             <span className="h4 mb-0 fw-bold">{employee.contractCurrency} {fullPayroll.netPay.toFixed(2)}</span>
                                           </div>
                                         </div>
 
-                                        <div className="alert alert-info mt-3 mb-0 small">
-                                          <strong>ℹ️ Note:</strong> Estimates only. Final calculations include YTD adjustments.
+                                        <div className="alert alert-light border mt-3 mb-0 small">
+                                          <strong>Note:</strong> Estimates only. Final calculations include YTD adjustments.
                                         </div>
                                       </div>
                                     </div>
