@@ -1,5 +1,5 @@
 {
-  "buildCommand": "bash build.sh",
+  "buildCommand": "node build.js",
   "outputDirectory": "frontend/build",
   "installCommand": "echo 'Dependencies installed via buildCommand'",
   "framework": null,
