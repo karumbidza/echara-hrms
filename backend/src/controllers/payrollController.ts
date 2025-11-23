@@ -1,8 +1,7 @@
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
-import { PAYEEngine } from '../utils/payeEngine';
-import { NSSAEngine } from '../utils/nssaEngine';
+import { TaxCalculationService } from '../services/taxCalculationService';
 
 const prisma = new PrismaClient();
 
@@ -232,38 +231,28 @@ async function calculateEmployeePayroll(input: {
   // Step 3: Calculate Taxable Income
   const taxableIncome = grossSalary - preTaxDeductions;
 
-  // Step 4: Calculate PAYE (using contract currency)
-  const payeResult = await PAYEEngine.calculatePAYE({
-    taxableIncome,
-    currency: employee.contractCurrency,
-    period: employee.payFrequency || 'MONTHLY',
-    ytdTaxable: employee.ytdTaxable || 0,
-    ytdPaye: employee.ytdPaye || 0,
-    periodDate: periodEnd,
-    tenantId
-  });
-
-  const paye = payeResult.payeThisPeriod;
-  const aidsLevy = PAYEEngine.calculateAIDSLevy(paye);
-
-  // Step 5: Calculate NSSA
-  const nssaResult = await NSSAEngine.calculateNSSA({
-    grossSalary,
-    currency: employee.contractCurrency,
-    periodDate: periodEnd,
-    tenantId
-  });
-
-  const nssaEmployee = nssaResult.employeeContribution;
-  const nssaEmployer = nssaResult.employerContribution;
-
-  // Step 6: Post-tax Deductions
+  // Step 4: Calculate Post-tax Deductions first (needed for service)
   const postTaxDeductions = 
     empData.loanRepayment + 
     empData.salaryAdvance + 
     empData.otherDeductions;
 
-  // Step 7: Calculate Total Deductions and Net Pay
+  // Step 5: Use new Tax Calculation Service
+  const taxResult = await TaxCalculationService.calculateEmployeePayroll(
+    employee,
+    basicSalary,
+    totalAllowances + totalBonuses + overtimePay,
+    preTaxDeductions,
+    postTaxDeductions,
+    tenantId
+  );
+
+  const paye = taxResult.paye;
+  const aidsLevy = taxResult.aidsLevy;
+  const nssaEmployee = taxResult.nssaEmployee;
+  const nssaEmployer = taxResult.nssaEmployer;
+
+  // Step 6: Calculate Total Deductions and Net Pay
   const totalDeductions = paye + aidsLevy + nssaEmployee + postTaxDeductions;
   const netSalary = grossSalary - totalDeductions;
 

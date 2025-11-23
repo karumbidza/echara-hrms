@@ -1,48 +1,59 @@
-// Frontend PAYE calculation utility (mirrors backend logic)
-// Zimbabwe 2025 tax rates
+// Frontend PAYE calculation utility (mirrors backend 2025 ZIMRA logic)
+// Zimbabwe 2025 tax rates using DEDUCT METHOD
 
 export interface TaxBracket {
   min: number;
   max: number | null;
   rate: number;
-  fixed: number;
+  deduct: number;
 }
 
 const USD_TAX_BRACKETS: TaxBracket[] = [
-  { min: 0, max: 600, rate: 0, fixed: 0 },           // $0-600/month - Tax Free
-  { min: 600, max: 1200, rate: 0.20, fixed: 0 },     // $600-1200/month - 20%
-  { min: 1200, max: 3000, rate: 0.25, fixed: 120 },  // $1200-3000/month - 25%
-  { min: 3000, max: null, rate: 0.30, fixed: 570 }   // Above $3000/month - 30%
+  { min: 0, max: 100, rate: 0, deduct: 0 },           // $0-100/month - Tax Free
+  { min: 100.01, max: 300, rate: 0.20, deduct: 20 },     // $100-300/month - 20%
+  { min: 300.01, max: 1000, rate: 0.25, deduct: 35 },  // $300-1000/month - 25%
+  { min: 1000.01, max: 2000, rate: 0.30, deduct: 85 },   // $1000-2000/month - 30%
+  { min: 2000.01, max: 3000, rate: 0.35, deduct: 185 },  // $2000-3000/month - 35%
+  { min: 3000.01, max: null, rate: 0.40, deduct: 335 }   // Above $3000/month - 40%
 ];
 
 const ZWL_TAX_BRACKETS: TaxBracket[] = [
-  { min: 0, max: 18000, rate: 0, fixed: 0 },              // ZWL 0-18000/month - Tax Free
-  { min: 18000, max: 36000, rate: 0.20, fixed: 0 },       // ZWL 18000-36000/month - 20%
-  { min: 36000, max: 90000, rate: 0.25, fixed: 3600 },    // ZWL 36000-90000/month - 25%
-  { min: 90000, max: null, rate: 0.30, fixed: 17100 }     // Above ZWL 90000/month - 30%
+  { min: 0, max: 2800, rate: 0, deduct: 0 },              // ZWL 0-2800/month - Tax Free
+  { min: 2800.01, max: 8400, rate: 0.20, deduct: 560 },       // ZWL 2800-8400/month - 20%
+  { min: 8400.01, max: 28000, rate: 0.25, deduct: 980 },    // ZWL 8400-28000/month - 25%
+  { min: 28000.01, max: 56000, rate: 0.30, deduct: 2380 },     // ZWL 28000-56000/month - 30%
+  { min: 56000.01, max: 84000, rate: 0.35, deduct: 5180 },     // ZWL 56000-84000/month - 35%
+  { min: 84000.01, max: null, rate: 0.40, deduct: 9380 }     // Above ZWL 84000/month - 40%
 ];
 
 /**
- * Calculate monthly PAYE for an employee
+ * Calculate monthly PAYE using DEDUCT METHOD
+ * Formula: Tax = (Taxable Income × Rate) - Deduct
  */
 export function calculatePAYE(taxableIncome: number, currency: string): number {
   const brackets = currency === 'USD' ? USD_TAX_BRACKETS : ZWL_TAX_BRACKETS;
   
   let paye = 0;
-  
-  for (const bracket of brackets) {
-    if (taxableIncome <= bracket.min) {
-      break;
+  let applicableBracket: TaxBracket | null = null;
+
+  // Find the applicable bracket (check from highest to lowest)
+  for (let i = brackets.length - 1; i >= 0; i--) {
+    const bracket = brackets[i];
+    if (taxableIncome > bracket.min) {
+      if (bracket.max === null || taxableIncome <= bracket.max) {
+        applicableBracket = bracket;
+        break;
+      }
     }
-    
-    const taxableInBracket = bracket.max 
-      ? Math.min(taxableIncome, bracket.max) - bracket.min
-      : taxableIncome - bracket.min;
-    
-    paye = bracket.fixed + (taxableInBracket * bracket.rate);
+  }
+
+  if (applicableBracket) {
+    // Apply formula: (Taxable Income × Rate) - Deduct
+    paye = (taxableIncome * applicableBracket.rate) - applicableBracket.deduct;
+    paye = Math.max(0, paye); // Ensure tax is not negative
   }
   
-  return Math.max(0, paye);
+  return paye;
 }
 
 /**
@@ -53,21 +64,21 @@ export function calculateAIDSLevy(paye: number): number {
 }
 
 /**
- * Calculate NSSA Employee contribution (3% of gross, with cap)
+ * Calculate NSSA Employee contribution (4.5% of gross, with cap)
  */
 export function calculateNSSAEmployee(grossSalary: number, currency: string): number {
   const cap = currency === 'USD' ? 1000 : 30000; // Monthly caps
   const cappedSalary = Math.min(grossSalary, cap);
-  return cappedSalary * 0.03;
+  return cappedSalary * 0.045; // 4.5%
 }
 
 /**
- * Calculate NSSA Employer contribution (3% of gross, with cap)
+ * Calculate NSSA Employer contribution (4.5% of gross, with cap)
  */
 export function calculateNSSAEmployer(grossSalary: number, currency: string): number {
   const cap = currency === 'USD' ? 1000 : 30000; // Monthly caps
   const cappedSalary = Math.min(grossSalary, cap);
-  return cappedSalary * 0.03;
+  return cappedSalary * 0.045; // 4.5%
 }
 
 /**
