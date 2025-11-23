@@ -1,7 +1,7 @@
 {
-  "buildCommand": "cd frontend && npm install --legacy-peer-deps && npm run build",
+  "buildCommand": "bash build.sh",
   "outputDirectory": "frontend/build",
-  "installCommand": "echo 'Using buildCommand for install'",
+  "installCommand": "echo 'Dependencies installed via buildCommand'",
   "framework": null,
   "headers": [
     {
