@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { calculatePayroll } from '../utils/payrollCalculations';
 
@@ -385,10 +385,7 @@ const Payroll: React.FC = () => {
                     const isExpanded = expandedEmployees.has(employee.id);
                     const inputs = payrollInputs[employee.id];
                     const totals = calculateTotals(employee.id);
-                    const fullPayroll = useMemo(() => 
-                      calculateFullPayroll(employee.id, employee.contractCurrency), 
-                      [employee.id, employee.contractCurrency, JSON.stringify(inputs)]
-                    );
+                    const fullPayroll = calculateFullPayroll(employee.id, employee.contractCurrency);
                     
                     return (
                       <React.Fragment key={employee.id}>
