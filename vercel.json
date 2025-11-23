@@ -2,10 +2,9 @@
   "github": {
     "silent": true
   },
-  "buildCommand": "npm install --legacy-peer-deps --prefix frontend && npm run build --prefix frontend",
+  "buildCommand": "npm --prefix ./frontend install --legacy-peer-deps && npm --prefix ./frontend run build",
   "outputDirectory": "frontend/build",
-  "devCommand": "npm start --prefix frontend",
-  "installCommand": "echo 'Skipping root install'",
+  "installCommand": null,
   "headers": [
     {
       "source": "/(.*)",
