@@ -11,6 +11,7 @@ import departmentRoutes from './routes/departmentRoutes';
 import organizationRoutes from './routes/organizationRoutes';
 import jobTitleRoutes from './routes/jobTitleRoutes';
 import payrollRoutes from './routes/payrollRoutes';
+import taxTableRoutes from './routes/taxTableRoutes';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -53,6 +54,7 @@ app.use('/api/departments', departmentRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/job-titles', jobTitleRoutes);
 app.use('/api/payroll', payrollRoutes);
+app.use('/api/tax-tables', taxTableRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

@@ -17,15 +17,16 @@ model Tenant {
   updatedAt DateTime @updatedAt
 
   // Relations
-  users         User[]
-  organizations Organization[]
-  employees     Employee[]
-  departments   Department[]
-  payrollRuns   PayrollRun[]
-  taxTables     TaxTable[]
-  nssaRates     NSSARate[]
-  currencyRates CurrencyRate[]
-  auditLogs     AuditLog[]
+  users           User[]
+  organizations   Organization[]
+  employees       Employee[]
+  departments     Department[]
+  payrollRuns     PayrollRun[]
+  taxTables       TaxTable[]
+  taxCalculations TaxCalculation[]
+  nssaRates       NSSARate[]
+  currencyRates   CurrencyRate[]
+  auditLogs       AuditLog[]
 
   @@map("tenants")
 }
@@ -139,11 +140,12 @@ model Employee {
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id])
 
-  payslips      Payslip[]
-  timesheets    Timesheet[]
-  leaves        Leave[]
-  salaryHistory SalaryHistory[]
-  payrollLines  PayrollLine[]
+  payslips        Payslip[]
+  timesheets      Timesheet[]
+  leaves          Leave[]
+  salaryHistory   SalaryHistory[]
+  payrollLines    PayrollLine[]
+  taxCalculations TaxCalculation[]
 
   @@map("employees")
 }
@@ -166,7 +168,8 @@ model PayrollRun {
   createdById String
   createdBy   User   @relation(fields: [createdById], references: [id])
 
-  payslips Payslip[]
+  payslips        Payslip[]
+  taxCalculations TaxCalculation[]
 
   @@map("payroll_runs")
 }
@@ -230,20 +233,51 @@ model Payslip {
 }
 
 model TaxTable {
-  id            String    @id @default(uuid())
-  name          String // e.g., "Zimbabwe PAYE 2025 - USD"
-  type          TaxType   @default(PAYE)
-  currency      String    @default("USD") // USD or ZWL
+  id            String       @id @default(uuid())
+  name          String // e.g., "USD Monthly 2025"
+  currency      String       @default("USD") // USD or ZWL
+  payFrequency  PayFrequency
+  type          TaxType      @default(PAYE)
   effectiveFrom DateTime
   effectiveTo   DateTime?
-  brackets      Json // [{min: 0, max: 600, fixed: 0, rate: 0}, {min: 600, max: 1200, fixed: 0, rate: 20}, ...]
-  createdAt     DateTime  @default(now())
+  isActive      Boolean      @default(true)
+  brackets      Json // [{min: 0, max: 100, rate: 0, deduct: 0}, ...]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   // Relations
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  taxCalculations TaxCalculation[]
+
   @@map("tax_tables")
+}
+
+model TaxCalculation {
+  id              String   @id @default(uuid())
+  taxableIncome   Float
+  currency        String
+  payFrequency    PayFrequency
+  payeAmount      Float    @default(0)
+  aidsLevy        Float    @default(0)
+  totalTax        Float    @default(0)
+  calculationDate DateTime @default(now())
+
+  // Relations
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  payrollRunId String?
+  payrollRun   PayrollRun? @relation(fields: [payrollRunId], references: [id])
+
+  taxTableId String?
+  taxTable   TaxTable? @relation(fields: [taxTableId], references: [id])
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tax_calculations")
 }
 
 model NSSARate {
@@ -251,8 +285,8 @@ model NSSARate {
   name          String // e.g., "NSSA Rates 2025"
   effectiveFrom DateTime
   effectiveTo   DateTime?
-  employeeRate  Float // e.g., 0.03 for 3%
-  employerRate  Float // e.g., 0.035 for 3.5%
+  employeeRate  Float // e.g., 0.045 for 4.5%
+  employerRate  Float // e.g., 0.045 for 4.5%
   maxCap        Float? // Maximum salary cap for NSSA
   currency      String    @default("USD")
   createdAt     DateTime  @default(now())
