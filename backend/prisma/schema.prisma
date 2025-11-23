@@ -46,10 +46,12 @@ model User {
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Audit relations
-  createdPayrollRuns PayrollRun[]
-  auditLogs          AuditLog[]
-  timesheets         Timesheet[]
-  leaves             Leave[]
+  createdPayrollRuns   PayrollRun[] @relation("PayrollCreator")
+  submittedPayrollRuns PayrollRun[] @relation("PayrollSubmitter")
+  approvedPayrollRuns  PayrollRun[] @relation("PayrollApprover")
+  auditLogs            AuditLog[]
+  timesheets           Timesheet[]
+  leaves               Leave[]
 
   @@map("users")
 }
@@ -115,6 +117,14 @@ model Employee {
   bankAccount      String?
   nssaNumber       String?
 
+  // Default Monthly Allowances/Deductions
+  defaultHousingAllowance   Float @default(0)
+  defaultTransportAllowance Float @default(0)
+  defaultMealAllowance      Float @default(0)
+  defaultOtherAllowances    Float @default(0)
+  defaultPensionContribution Float @default(0)
+  defaultMedicalAid         Float @default(0)
+
   // YTD Tracking
   ytdGross   Float @default(0)
   ytdTaxable Float @default(0)
@@ -154,10 +164,23 @@ model PayrollRun {
   id          String        @id @default(uuid())
   periodStart DateTime
   periodEnd   DateTime
-  status      PayrollStatus @default(QUEUED)
+  status      PayrollStatus @default(DRAFT)
   totalGross  Float         @default(0)
   totalNet    Float         @default(0)
   runDate     DateTime      @default(now())
+  
+  // Approval workflow
+  submittedAt DateTime?
+  submittedBy String?
+  submitter   User?    @relation("PayrollSubmitter", fields: [submittedBy], references: [id])
+  
+  approvedAt   DateTime?
+  approvedBy   String?
+  approver     User?    @relation("PayrollApprover", fields: [approvedBy], references: [id])
+  
+  rejectedAt   DateTime?
+  rejectionReason String?
+  
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
@@ -166,7 +189,7 @@ model PayrollRun {
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   createdById String
-  createdBy   User   @relation(fields: [createdById], references: [id])
+  createdBy   User   @relation("PayrollCreator", fields: [createdById], references: [id])
 
   payslips        Payslip[]
   taxCalculations TaxCalculation[]
@@ -437,10 +460,13 @@ enum PayFrequency {
 }
 
 enum PayrollStatus {
-  QUEUED
-  PROCESSING
-  COMPLETED
-  FAILED
+  DRAFT       // Initial state, being prepared
+  PENDING     // Submitted for approval
+  APPROVED    // Approved by manager
+  PROCESSING  // Being processed/paid
+  COMPLETED   // Payment completed
+  REJECTED    // Rejected by approver
+  FAILED      // Processing failed
 }
 
 enum TaxType {

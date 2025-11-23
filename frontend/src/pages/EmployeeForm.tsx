@@ -46,6 +46,12 @@ const EmployeeForm: React.FC = () => {
     bankAccount: '',
     nssaNumber: '',
     departmentId: '',
+    defaultHousingAllowance: 0,
+    defaultTransportAllowance: 0,
+    defaultMealAllowance: 0,
+    defaultOtherAllowances: 0,
+    defaultPensionContribution: 0,
+    defaultMedicalAid: 0,
     isActive: true
   });
 
@@ -108,6 +114,12 @@ const EmployeeForm: React.FC = () => {
         bankAccount: employee.bankAccount || '',
         nssaNumber: employee.nssaNumber || '',
         departmentId: employee.departmentId || '',
+        defaultHousingAllowance: employee.defaultHousingAllowance || 0,
+        defaultTransportAllowance: employee.defaultTransportAllowance || 0,
+        defaultMealAllowance: employee.defaultMealAllowance || 0,
+        defaultOtherAllowances: employee.defaultOtherAllowances || 0,
+        defaultPensionContribution: employee.defaultPensionContribution || 0,
+        defaultMedicalAid: employee.defaultMedicalAid || 0,
         isActive: employee.isActive
       });
       setLoading(false);
@@ -515,6 +527,103 @@ const EmployeeForm: React.FC = () => {
                 onChange={handleChange}
               />
             </Form.Group>
+          </Card.Body>
+        </Card>
+
+        {/* Default Monthly Allowances & Deductions */}
+        <Card className="mb-4">
+          <Card.Header className="bg-dark text-white">
+            <h5 className="mb-0">Default Monthly Allowances & Deductions</h5>
+            <small className="text-muted">These amounts will be auto-populated when running payroll</small>
+          </Card.Header>
+          <Card.Body>
+            <h6 className="text-success mb-3">Default Allowances</h6>
+            <Row>
+              <Col md={3}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Housing Allowance</Form.Label>
+                  <Form.Control
+                    type="number"
+                    step="0.01"
+                    name="defaultHousingAllowance"
+                    value={formData.defaultHousingAllowance || 0}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Transport Allowance</Form.Label>
+                  <Form.Control
+                    type="number"
+                    step="0.01"
+                    name="defaultTransportAllowance"
+                    value={formData.defaultTransportAllowance || 0}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Meal Allowance</Form.Label>
+                  <Form.Control
+                    type="number"
+                    step="0.01"
+                    name="defaultMealAllowance"
+                    value={formData.defaultMealAllowance || 0}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Other Allowances</Form.Label>
+                  <Form.Control
+                    type="number"
+                    step="0.01"
+                    name="defaultOtherAllowances"
+                    value={formData.defaultOtherAllowances || 0}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <h6 className="text-warning mb-3 mt-3">Default Deductions</h6>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Pension Contribution</Form.Label>
+                  <Form.Control
+                    type="number"
+                    step="0.01"
+                    name="defaultPensionContribution"
+                    value={formData.defaultPensionContribution || 0}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                  />
+                  <Form.Text className="text-muted">Pre-tax deduction</Form.Text>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Medical Aid</Form.Label>
+                  <Form.Control
+                    type="number"
+                    step="0.01"
+                    name="defaultMedicalAid"
+                    value={formData.defaultMedicalAid || 0}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                  />
+                  <Form.Text className="text-muted">Pre-tax deduction</Form.Text>
+                </Form.Group>
+              </Col>
+            </Row>
           </Card.Body>
         </Card>
 

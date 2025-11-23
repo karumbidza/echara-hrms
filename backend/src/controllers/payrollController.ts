@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, PayrollStatus } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
 import { TaxCalculationService } from '../services/taxCalculationService';
 
@@ -50,7 +50,7 @@ export const runPayroll = async (req: AuthRequest, res: Response) => {
       data: {
         periodStart: new Date(periodStart),
         periodEnd: new Date(periodEnd),
-        status: 'PROCESSING',
+        status: PayrollStatus.DRAFT,
         tenantId: tenantId!,
         createdById: userId!
       }
@@ -170,11 +170,10 @@ export const runPayroll = async (req: AuthRequest, res: Response) => {
       }
     }
 
-    // Update payroll run
+    // Update payroll run with totals (keep as DRAFT for approval)
     await prisma.payrollRun.update({
       where: { id: payrollRun.id },
       data: {
-        status: 'COMPLETED',
         totalGross,
         totalNet
       }

@@ -11,6 +11,12 @@ interface Employee {
   basicSalary: number;
   currency: string;
   contractCurrency: string;
+  defaultHousingAllowance: number;
+  defaultTransportAllowance: number;
+  defaultMealAllowance: number;
+  defaultOtherAllowances: number;
+  defaultPensionContribution: number;
+  defaultMedicalAid: number;
   department: {
     name: string;
   };
@@ -52,6 +58,8 @@ const Payroll: React.FC = () => {
   const [periodEnd, setPeriodEnd] = useState('');
   const [exchangeRate, setExchangeRate] = useState(30); // USD to ZWL rate
   const [processing, setProcessing] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [createdPayrollRunId, setCreatedPayrollRunId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [expandedEmployees, setExpandedEmployees] = useState<Set<string>>(new Set());
 
@@ -76,20 +84,20 @@ const Payroll: React.FC = () => {
       const activeEmployees = response.data.employees.filter((emp: Employee) => emp.basicSalary > 0);
       setEmployees(activeEmployees);
       
-      // Initialize payroll inputs with basic salary
+      // Initialize payroll inputs with basic salary and default allowances
       const initialInputs: PayrollInputs = {};
       activeEmployees.forEach((emp: Employee) => {
         initialInputs[emp.id] = {
           basicSalary: emp.basicSalary,
-          housingAllowance: 0,
-          transportAllowance: 0,
-          mealAllowance: 0,
-          otherAllowances: 0,
+          housingAllowance: emp.defaultHousingAllowance || 0,
+          transportAllowance: emp.defaultTransportAllowance || 0,
+          mealAllowance: emp.defaultMealAllowance || 0,
+          otherAllowances: emp.defaultOtherAllowances || 0,
           overtimePay: 0,
           bonus: 0,
           commission: 0,
-          pensionContribution: 0,
-          medicalAid: 0,
+          pensionContribution: emp.defaultPensionContribution || 0,
+          medicalAid: emp.defaultMedicalAid || 0,
           loanRepayment: 0,
           salaryAdvance: 0,
           otherDeductions: 0,
@@ -257,15 +265,12 @@ const Payroll: React.FC = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      const payrollRunId = response.data.payrollRun.id;
+      setCreatedPayrollRunId(payrollRunId);
       setMessage({
         type: 'success',
-        text: `Payroll processed successfully! ${response.data.payrollRun.employeesProcessed} employees processed.`
+        text: `Payroll created successfully! ${response.data.payrollRun.employeesProcessed} employees processed. Status: DRAFT`
       });
-
-      // Redirect to payroll runs after 2 seconds
-      setTimeout(() => {
-        window.location.href = '/payroll-runs';
-      }, 2000);
 
     } catch (error: any) {
       console.error('Error running payroll:', error);
@@ -275,6 +280,44 @@ const Payroll: React.FC = () => {
       });
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleSubmitForApproval = async () => {
+    if (!createdPayrollRunId) return;
+
+    if (!window.confirm('Submit this payroll for approval? It cannot be edited after submission.')) {
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+      
+      await axios.post(
+        `${API_URL}/payroll/approval/${createdPayrollRunId}/submit`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setMessage({
+        type: 'success',
+        text: 'Payroll submitted for approval! Redirecting...'
+      });
+
+      setTimeout(() => {
+        window.location.href = '/payroll-runs';
+      }, 1500);
+
+    } catch (error: any) {
+      console.error('Error submitting payroll:', error);
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.error || 'Failed to submit payroll for approval'
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -292,7 +335,26 @@ const Payroll: React.FC = () => {
 
       {message && (
         <div className={`alert alert-${message.type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`}>
-          {message.text}
+          <div className="d-flex justify-content-between align-items-center">
+            <span>{message.text}</span>
+            {message.type === 'success' && createdPayrollRunId && (
+              <div>
+                <button 
+                  className="btn btn-primary btn-sm me-2" 
+                  onClick={handleSubmitForApproval}
+                  disabled={submitting}
+                >
+                  {submitting ? 'Submitting...' : 'Submit for Approval'}
+                </button>
+                <button 
+                  className="btn btn-outline-secondary btn-sm" 
+                  onClick={() => window.location.href = '/payroll-runs'}
+                >
+                  View Payroll Runs
+                </button>
+              </div>
+            )}
+          </div>
           <button type="button" className="btn-close" onClick={() => setMessage(null)}></button>
         </div>
       )}

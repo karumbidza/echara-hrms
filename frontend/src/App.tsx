@@ -12,6 +12,7 @@ import Departments from './pages/Departments';
 import Payroll from './pages/Payroll';
 import PayrollRuns from './pages/PayrollRuns';
 import PayrollRunDetail from './pages/PayrollRunDetail';
+import PayrollApprovals from './pages/PayrollApprovals';
 
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -94,6 +95,14 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <PayrollRunDetail />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/payroll-approvals" 
+              element={
+                <ProtectedRoute>
+                  <PayrollApprovals />
                 </ProtectedRoute>
               } 
             />
