@@ -124,6 +124,7 @@ model Employee {
   defaultOtherAllowances    Float @default(0)
   defaultPensionContribution Float @default(0)
   defaultMedicalAid         Float @default(0)
+  defaultMonthlyLeaveRate   Float @default(0) // Monthly leave allowance (gets reduced by days taken)
 
   // YTD Tracking
   ytdGross   Float @default(0)

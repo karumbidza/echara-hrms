@@ -52,6 +52,7 @@ const EmployeeForm: React.FC = () => {
     defaultOtherAllowances: 0,
     defaultPensionContribution: 0,
     defaultMedicalAid: 0,
+    defaultMonthlyLeaveRate: 0,
     isActive: true
   });
 
@@ -120,6 +121,7 @@ const EmployeeForm: React.FC = () => {
         defaultOtherAllowances: employee.defaultOtherAllowances || 0,
         defaultPensionContribution: employee.defaultPensionContribution || 0,
         defaultMedicalAid: employee.defaultMedicalAid || 0,
+        defaultMonthlyLeaveRate: employee.defaultMonthlyLeaveRate || 0,
         isActive: employee.isActive
       });
       setLoading(false);
@@ -621,6 +623,20 @@ const EmployeeForm: React.FC = () => {
                     placeholder="0.00"
                   />
                   <Form.Text className="text-muted">Pre-tax deduction</Form.Text>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Monthly Leave Rate</Form.Label>
+                  <Form.Control
+                    type="number"
+                    step="0.01"
+                    name="defaultMonthlyLeaveRate"
+                    value={formData.defaultMonthlyLeaveRate || 0}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                  />
+                  <Form.Text className="text-muted">Full month leave allowance (reduced by days taken)</Form.Text>
                 </Form.Group>
               </Col>
             </Row>

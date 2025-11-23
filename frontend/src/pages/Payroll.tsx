@@ -17,6 +17,7 @@ interface Employee {
   defaultOtherAllowances: number;
   defaultPensionContribution: number;
   defaultMedicalAid: number;
+  defaultMonthlyLeaveRate: number;
   department: {
     name: string;
   };
@@ -32,6 +33,8 @@ interface PayrollInputs {
     transportAllowance: number;
     mealAllowance: number;
     otherAllowances: number;
+    monthlyLeaveRate: number;
+    leaveDaysTaken: number;
     overtimePay: number;
     bonus: number;
     commission: number;
@@ -93,6 +96,8 @@ const Payroll: React.FC = () => {
           transportAllowance: emp.defaultTransportAllowance || 0,
           mealAllowance: emp.defaultMealAllowance || 0,
           otherAllowances: emp.defaultOtherAllowances || 0,
+          monthlyLeaveRate: emp.defaultMonthlyLeaveRate || 0,
+          leaveDaysTaken: 0,
           overtimePay: 0,
           bonus: 0,
           commission: 0,
@@ -152,7 +157,12 @@ const Payroll: React.FC = () => {
 
   const calculateTotals = (employeeId: string) => {
     const inputs = payrollInputs[employeeId];
-    if (!inputs) return { gross: 0, preTaxDeductions: 0, taxable: 0 };
+    if (!inputs) return { gross: 0, preTaxDeductions: 0, taxable: 0, leaveDeduction: 0 };
+
+    // Calculate leave deduction: (Monthly Leave Rate / 30) × Leave Days Taken
+    const dailyLeaveRate = inputs.monthlyLeaveRate / 30;
+    const leaveDeduction = dailyLeaveRate * inputs.leaveDaysTaken;
+    const netLeaveAmount = inputs.monthlyLeaveRate - leaveDeduction;
 
     const earnings = 
       inputs.basicSalary + 
@@ -160,6 +170,7 @@ const Payroll: React.FC = () => {
       inputs.transportAllowance + 
       inputs.mealAllowance + 
       inputs.otherAllowances + 
+      netLeaveAmount + // Add net leave amount (after deduction)
       inputs.overtimePay + 
       inputs.bonus + 
       inputs.commission;
@@ -167,7 +178,7 @@ const Payroll: React.FC = () => {
     const preTaxDeductions = inputs.pensionContribution + inputs.medicalAid;
     const taxable = earnings - preTaxDeductions;
 
-    return { gross: earnings, preTaxDeductions, taxable };
+    return { gross: earnings, preTaxDeductions, taxable, leaveDeduction };
   };
 
   const calculateFullPayroll = (employeeId: string, currency: string) => {
@@ -577,7 +588,7 @@ const Payroll: React.FC = () => {
                                             />
                                           </div>
                                         </div>
-                                        <div className="mb-0">
+                                        <div className="mb-3">
                                           <label className="form-label fw-semibold small text-muted text-uppercase">Other Allowances</label>
                                           <div className="input-group input-group-sm">
                                             <span className="input-group-text bg-light">{employee.contractCurrency}</span>
@@ -591,6 +602,45 @@ const Payroll: React.FC = () => {
                                               placeholder="0.00"
                                             />
                                           </div>
+                                        </div>
+
+                                        <div className="mb-2 pb-2 border-top border-bottom pt-3">
+                                          <small className="text-muted fw-bold d-block text-uppercase" style={{fontSize: '0.7rem'}}>Leave Allowance</small>
+                                        </div>
+                                        <div className="mb-3">
+                                          <label className="form-label fw-semibold small text-muted text-uppercase">Monthly Leave Rate</label>
+                                          <div className="input-group input-group-sm">
+                                            <span className="input-group-text bg-light">{employee.contractCurrency}</span>
+                                            <input
+                                              type="number"
+                                              className="form-control"
+                                              value={inputs?.monthlyLeaveRate || ''}
+                                              onChange={(e) => handleInputChange(employee.id, 'monthlyLeaveRate', e.target.value)}
+                                              min="0"
+                                              step="0.01"
+                                              placeholder="0.00"
+                                            />
+                                          </div>
+                                        </div>
+                                        <div className="mb-0">
+                                          <label className="form-label fw-semibold small text-muted text-uppercase">Leave Days Taken</label>
+                                          <div className="input-group input-group-sm">
+                                            <span className="input-group-text bg-light">Days</span>
+                                            <input
+                                              type="number"
+                                              className="form-control"
+                                              value={inputs?.leaveDaysTaken || ''}
+                                              onChange={(e) => handleInputChange(employee.id, 'leaveDaysTaken', e.target.value)}
+                                              min="0"
+                                              max="30"
+                                              step="0.5"
+                                              placeholder="0"
+                                            />
+                                          </div>
+                                          <small className="text-muted">
+                                            Deduction: {employee.contractCurrency} {totals.leaveDeduction.toFixed(2)} 
+                                            {inputs?.leaveDaysTaken > 0 && ` (${inputs.leaveDaysTaken} days × ${(inputs.monthlyLeaveRate / 30).toFixed(2)}/day)`}
+                                          </small>
                                         </div>
                                       </div>
                                     </div>

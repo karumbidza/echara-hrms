@@ -7,6 +7,7 @@ import {
   getPayslip,
   getSalaryHistory
 } from '../controllers/payrollController';
+import { exportPAYE, exportNSSA, exportBankPayments } from '../controllers/payrollExportController';
 import { authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
@@ -18,6 +19,11 @@ router.use(authenticateToken);
 router.post('/run', runPayroll);
 router.get('/runs', getPayrollRuns);
 router.get('/runs/:id', getPayrollRun);
+
+// CSV Exports for remittances
+router.get('/runs/:id/export-paye', exportPAYE);
+router.get('/runs/:id/export-nssa', exportNSSA);
+router.get('/runs/:id/export-bank-payments', exportBankPayments);
 
 // Payslips
 router.get('/employees/:employeeId/payslips', getEmployeePayslips);
