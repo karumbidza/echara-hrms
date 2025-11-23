@@ -45,7 +45,8 @@ const Payroll: React.FC = () => {
   const fetchEmployees = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/employees`, {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+      const response = await axios.get(`${API_URL}/employees`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setEmployees(response.data.employees.filter((emp: Employee) => emp.basicSalary > 0));
@@ -102,6 +103,7 @@ const Payroll: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
       
       // Format inputs for API
       const allowances: any = {};
@@ -118,7 +120,7 @@ const Payroll: React.FC = () => {
       });
 
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/payroll/run`,
+        `${API_URL}/payroll/run`,
         {
           periodStart,
           periodEnd,

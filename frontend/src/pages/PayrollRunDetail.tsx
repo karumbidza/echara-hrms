@@ -55,7 +55,8 @@ const PayrollRunDetail: React.FC = () => {
   const fetchPayrollRun = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/payroll/runs/${id}`, {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+      const response = await axios.get(`${API_URL}/payroll/runs/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setPayrollRun(response.data.payrollRun);
