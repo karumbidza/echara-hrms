@@ -15,16 +15,18 @@ model Tenant {
   timezone  String   @default("Africa/Harare")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   // Relations
-  users        User[]
+  users         User[]
   organizations Organization[]
-  employees    Employee[]
-  departments  Department[]
-  payrollRuns  PayrollRun[]
-  taxTables    TaxTable[]
-  auditLogs    AuditLog[]
-  
+  employees     Employee[]
+  departments   Department[]
+  payrollRuns   PayrollRun[]
+  taxTables     TaxTable[]
+  nssaRates     NSSARate[]
+  currencyRates CurrencyRate[]
+  auditLogs     AuditLog[]
+
   @@map("tenants")
 }
 
@@ -37,36 +39,36 @@ model User {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   // Relations
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  
+
   // Audit relations
   createdPayrollRuns PayrollRun[]
   auditLogs          AuditLog[]
   timesheets         Timesheet[]
   leaves             Leave[]
-  
+
   @@map("users")
 }
 
 model Organization {
-  id          String   @id @default(uuid())
-  name        String
-  address     String?
-  phone       String?
-  email       String?
-  taxNumber   String?
-  nssaNumber  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  id         String   @id @default(uuid())
+  name       String
+  address    String?
+  phone      String?
+  email      String?
+  taxNumber  String?
+  nssaNumber String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
   // Relations
-  tenantId String
-  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId    String
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   departments Department[]
-  
+
   @@map("organizations")
 }
 
@@ -76,170 +78,284 @@ model Department {
   code      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   // Relations
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  
+
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
+
   employees Employee[]
-  
+
   @@map("departments")
 }
 
 model Employee {
-  id              String   @id @default(uuid())
-  employeeNumber  String   @unique
-  firstName       String
-  lastName        String
-  nationalId      String?
-  dateOfBirth     DateTime?
-  hireDate        DateTime?
-  email           String?
-  phone           String?
-  address         String?
-  
+  id             String    @id @default(uuid())
+  employeeNumber String    @unique
+  firstName      String
+  lastName       String
+  nationalId     String?
+  dateOfBirth    DateTime?
+  hireDate       DateTime?
+  email          String?
+  phone          String?
+  address        String?
+
   // Employment details
-  employmentType  EmploymentType @default(FULL_TIME)
-  jobTitle        String
-  payFrequency    PayFrequency   @default(MONTHLY)
-  basicSalary     Float         @default(0)
-  currency        String        @default("USD")
-  bankName        String?
-  bankAccount     String?
-  nssaNumber      String?
-  
+  employmentType   EmploymentType @default(FULL_TIME)
+  jobTitle         String
+  payFrequency     PayFrequency   @default(MONTHLY)
+  basicSalary      Float          @default(0)
+  currency         String         @default("USD") // Display currency
+  contractCurrency String         @default("USD") // Contract currency for tax calculations
+  bankName         String?
+  bankAccount      String?
+  nssaNumber       String?
+
+  // YTD Tracking
+  ytdGross   Float @default(0)
+  ytdTaxable Float @default(0)
+  ytdPaye    Float @default(0)
+  ytdNssa    Float @default(0)
+  ytdNetPay  Float @default(0)
+  ytdYear    Int? // Year for YTD tracking
+
   // Document uploads
-  photoPath         String?
-  nationalIdPath    String?
+  photoPath          String?
+  nationalIdPath     String?
   driversLicensePath String?
-  
+
   // Status
-  isActive      Boolean @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
-  tenantId     String
-  tenant       Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id])
-  
-  payslips     Payslip[]
-  timesheets   Timesheet[]
-  leaves       Leave[]
-  
+
+  payslips      Payslip[]
+  timesheets    Timesheet[]
+  leaves        Leave[]
+  salaryHistory SalaryHistory[]
+  payrollLines  PayrollLine[]
+
   @@map("employees")
 }
 
 model PayrollRun {
-  id           String       @id @default(uuid())
-  periodStart  DateTime
-  periodEnd    DateTime
-  status       PayrollStatus @default(QUEUED)
-  totalGross   Float        @default(0)
-  totalNet     Float        @default(0)
-  runDate      DateTime     @default(now())
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  
+  id          String        @id @default(uuid())
+  periodStart DateTime
+  periodEnd   DateTime
+  status      PayrollStatus @default(QUEUED)
+  totalGross  Float         @default(0)
+  totalNet    Float         @default(0)
+  runDate     DateTime      @default(now())
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
   // Relations
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  
+
   createdById String
-  createdBy   User @relation(fields: [createdById], references: [id])
-  
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
   payslips Payslip[]
-  
+
   @@map("payroll_runs")
 }
 
 model Payslip {
-  id            String   @id @default(uuid())
-  grossSalary   Float    @default(0)
-  basicSalary   Float    @default(0)
-  allowances    Float    @default(0)
-  deductions    Float    @default(0)
-  overtime      Float    @default(0)
-  nssaEmployee  Float    @default(0)
-  nssaEmployer  Float    @default(0)
-  paye          Float    @default(0)
-  aidsLevy      Float    @default(0)
-  netSalary     Float    @default(0)
-  details       Json?    // Breakdown of components
-  pdfPath       String?  // Path to generated PDF
-  isDelivered   Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  
+  id          String   @id @default(uuid())
+  periodStart DateTime
+  periodEnd   DateTime
+  payDate     DateTime
+
+  // Salary components
+  grossSalary Float @default(0)
+  basicSalary Float @default(0)
+  allowances  Float @default(0)
+  bonuses     Float @default(0)
+  overtime    Float @default(0)
+
+  // Deductions
+  preTaxDeductions Float @default(0)
+  taxableIncome    Float @default(0)
+  paye             Float @default(0)
+  aidsLevy         Float @default(0)
+  nssaEmployee     Float @default(0)
+  otherDeductions  Float @default(0)
+  totalDeductions  Float @default(0)
+
+  // Net and employer costs
+  netSalary     Float @default(0)
+  nssaEmployer  Float @default(0)
+  employerTotal Float @default(0)
+
+  // Currency and tracking
+  currency         String @default("USD")
+  contractCurrency String @default("USD")
+  exchangeRate     Float? // If paid in different currency
+
+  // YTD at time of payslip
+  ytdGross   Float @default(0)
+  ytdTaxable Float @default(0)
+  ytdPaye    Float @default(0)
+  ytdNssa    Float @default(0)
+  ytdNetPay  Float @default(0)
+
+  // Metadata
+  details      Json? // Detailed breakdown
+  pdfPath      String? // Path to generated PDF
+  isDelivered  Boolean  @default(false)
+  isAdjustment Boolean  @default(false) // Retroactive adjustment flag
+  createdAt    DateTime @default(now())
+
   // Relations
   payrollRunId String
   payrollRun   PayrollRun @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
-  
+
   employeeId String
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  
+
+  payrollLines PayrollLine[]
+
   @@map("payslips")
 }
 
 model TaxTable {
-  id            String   @id @default(uuid())
-  name          String
-  type          TaxType  @default(PAYE)
+  id            String    @id @default(uuid())
+  name          String // e.g., "Zimbabwe PAYE 2025 - USD"
+  type          TaxType   @default(PAYE)
+  currency      String    @default("USD") // USD or ZWL
   effectiveFrom DateTime
   effectiveTo   DateTime?
-  brackets      Json     // Tax brackets in JSON format
-  createdAt     DateTime @default(now())
-  
+  brackets      Json // [{min: 0, max: 600, fixed: 0, rate: 0}, {min: 600, max: 1200, fixed: 0, rate: 20}, ...]
+  createdAt     DateTime  @default(now())
+
   // Relations
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  
+
   @@map("tax_tables")
 }
 
-model Timesheet {
-  id         String         @id @default(uuid())
-  date       DateTime
-  clockIn    DateTime?
-  clockOut   DateTime?
-  regularHours Float        @default(0)
-  overtimeHours Float       @default(0)
-  status     TimesheetStatus @default(PENDING)
-  notes      String?
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
-  
+model NSSARate {
+  id            String    @id @default(uuid())
+  name          String // e.g., "NSSA Rates 2025"
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  employeeRate  Float // e.g., 0.03 for 3%
+  employerRate  Float // e.g., 0.035 for 3.5%
+  maxCap        Float? // Maximum salary cap for NSSA
+  currency      String    @default("USD")
+  createdAt     DateTime  @default(now())
+
+  // Relations
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("nssa_rates")
+}
+
+model CurrencyRate {
+  id            String   @id @default(uuid())
+  fromCurrency  String // e.g., "ZWL"
+  toCurrency    String // e.g., "USD"
+  rate          Float // Conversion rate
+  effectiveDate DateTime
+  source        String? // e.g., "RBZ", "Manual"
+  createdAt     DateTime @default(now())
+
+  // Relations
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("currency_rates")
+}
+
+model PayrollLine {
+  id          String          @id @default(uuid())
+  lineType    PayrollLineType // BASIC_SALARY, ALLOWANCE, OVERTIME, BONUS, DEDUCTION, PAYE, NSSA_EMPLOYEE, NSSA_EMPLOYER, ADJUSTMENT
+  description String
+  amount      Float
+  currency    String          @default("USD")
+  isStatutory Boolean         @default(false)
+  isTaxable   Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+
+  // Relations
+  payslipId String
+  payslip   Payslip @relation(fields: [payslipId], references: [id], onDelete: Cascade)
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@map("payroll_lines")
+}
+
+model SalaryHistory {
+  id             String   @id @default(uuid())
+  effectiveDate  DateTime
+  previousSalary Float
+  newSalary      Float
+  currency       String
+  reason         String? // e.g., "Annual Increment", "Promotion", "Adjustment"
+  approvedBy     String?
+  createdAt      DateTime @default(now())
+
   // Relations
   employeeId String
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  
+
+  @@map("salary_history")
+}
+
+model Timesheet {
+  id            String          @id @default(uuid())
+  date          DateTime
+  clockIn       DateTime?
+  clockOut      DateTime?
+  regularHours  Float           @default(0)
+  overtimeHours Float           @default(0)
+  status        TimesheetStatus @default(PENDING)
+  notes         String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // Relations
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
   approvedById String?
-  approvedBy   User? @relation(fields: [approvedById], references: [id])
-  
+  approvedBy   User?   @relation(fields: [approvedById], references: [id])
+
   @@map("timesheets")
 }
 
 model Leave {
-  id          String      @id @default(uuid())
-  type        LeaveType
-  startDate   DateTime
-  endDate     DateTime
-  reason      String?
-  status      LeaveStatus @default(PENDING)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  
+  id        String      @id @default(uuid())
+  type      LeaveType
+  startDate DateTime
+  endDate   DateTime
+  reason    String?
+  status    LeaveStatus @default(PENDING)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
   // Relations
   employeeId String
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  
+
   approvedById String?
-  approvedBy   User? @relation(fields: [approvedById], references: [id])
-  
+  approvedBy   User?   @relation(fields: [approvedById], references: [id])
+
   @@map("leaves")
 }
 
@@ -253,14 +369,14 @@ model AuditLog {
   ipAddress String?
   userAgent String?
   createdAt DateTime @default(now())
-  
+
   // Relations
   userId String?
-  user   User? @relation(fields: [userId], references: [id])
-  
+  user   User?   @relation(fields: [userId], references: [id])
+
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  
+
   @@map("audit_logs")
 }
 
@@ -318,4 +434,18 @@ enum LeaveStatus {
   APPROVED
   REJECTED
   CANCELLED
+}
+
+enum PayrollLineType {
+  BASIC_SALARY
+  ALLOWANCE
+  OVERTIME
+  BONUS
+  DEDUCTION
+  PAYE
+  AIDS_LEVY
+  NSSA_EMPLOYEE
+  NSSA_EMPLOYER
+  ADJUSTMENT
+  OTHER
 }
