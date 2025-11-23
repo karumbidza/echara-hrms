@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
+import { calculatePayroll } from '../utils/payrollCalculations';
 
 interface Employee {
   id: string;
@@ -159,6 +160,45 @@ const Payroll: React.FC = () => {
     const taxable = earnings - preTaxDeductions;
 
     return { gross: earnings, preTaxDeductions, taxable };
+  };
+
+  const calculateFullPayroll = (employeeId: string, currency: string) => {
+    const inputs = payrollInputs[employeeId];
+    if (!inputs) {
+      return {
+        grossEarnings: 0,
+        preTaxDeductions: 0,
+        taxableIncome: 0,
+        paye: 0,
+        aidsLevy: 0,
+        nssaEmployee: 0,
+        nssaEmployer: 0,
+        postTaxDeductions: 0,
+        totalDeductions: 0,
+        netPay: 0
+      };
+    }
+
+    const totalAllowances = 
+      inputs.housingAllowance + 
+      inputs.transportAllowance + 
+      inputs.mealAllowance + 
+      inputs.otherAllowances;
+    
+    const totalBonuses = inputs.bonus + inputs.commission;
+
+    return calculatePayroll(
+      inputs.basicSalary,
+      totalAllowances,
+      totalBonuses,
+      inputs.overtimePay,
+      inputs.pensionContribution,
+      inputs.medicalAid,
+      inputs.loanRepayment,
+      inputs.salaryAdvance,
+      inputs.otherDeductions,
+      currency
+    );
   };
 
   const handleRunPayroll = async () => {
@@ -342,6 +382,10 @@ const Payroll: React.FC = () => {
                     const isExpanded = expandedEmployees.has(employee.id);
                     const inputs = payrollInputs[employee.id];
                     const totals = calculateTotals(employee.id);
+                    const fullPayroll = useMemo(() => 
+                      calculateFullPayroll(employee.id, employee.contractCurrency), 
+                      [employee.id, employee.contractCurrency, JSON.stringify(inputs)]
+                    );
                     
                     return (
                       <React.Fragment key={employee.id}>
@@ -577,20 +621,67 @@ const Payroll: React.FC = () => {
                                   </div>
                                 </div>
 
-                                <div className="mt-3 p-2 bg-white border rounded">
-                                  <div className="row text-center">
-                                    <div className="col-4">
-                                      <small className="text-muted">Gross Earnings</small>
-                                      <div><strong>{employee.contractCurrency} {totals.gross.toFixed(2)}</strong></div>
+                                <div className="mt-4 p-3 bg-white border rounded shadow-sm">
+                                  <h6 className="text-center mb-3">📊 Payroll Summary</h6>
+                                  <div className="row g-3">
+                                    <div className="col-3 text-center">
+                                      <small className="text-muted d-block">Gross Earnings</small>
+                                      <div className="h5 mb-0 text-success">{employee.contractCurrency} {totals.gross.toFixed(2)}</div>
                                     </div>
-                                    <div className="col-4">
-                                      <small className="text-muted">Pre-tax Deductions</small>
-                                      <div><strong>{employee.contractCurrency} {totals.preTaxDeductions.toFixed(2)}</strong></div>
+                                    <div className="col-3 text-center">
+                                      <small className="text-muted d-block">Pre-tax Ded.</small>
+                                      <div className="h5 mb-0 text-warning">-{employee.contractCurrency} {totals.preTaxDeductions.toFixed(2)}</div>
                                     </div>
-                                    <div className="col-4">
-                                      <small className="text-muted">Taxable Income</small>
-                                      <div><strong className="text-primary">{employee.contractCurrency} {totals.taxable.toFixed(2)}</strong></div>
+                                    <div className="col-3 text-center border-start">
+                                      <small className="text-muted d-block">Taxable Income</small>
+                                      <div className="h5 mb-0 text-primary">{employee.contractCurrency} {totals.taxable.toFixed(2)}</div>
                                     </div>
+                                    <div className="col-3 text-center border-start">
+                                      <small className="text-muted d-block">Est. Net Pay</small>
+                                      <div className="h4 mb-0 text-success"><strong>{employee.contractCurrency} {fullPayroll.netPay.toFixed(2)}</strong></div>
+                                    </div>
+                                  </div>
+                                  <hr className="my-3"/>
+                                  <div className="row g-2 small">
+                                    <div className="col-6">
+                                      <div className="d-flex justify-content-between">
+                                        <span className="text-muted">PAYE:</span>
+                                        <strong>{employee.contractCurrency} {fullPayroll.paye.toFixed(2)}</strong>
+                                      </div>
+                                    </div>
+                                    <div className="col-6">
+                                      <div className="d-flex justify-content-between">
+                                        <span className="text-muted">AIDS Levy:</span>
+                                        <strong>{employee.contractCurrency} {fullPayroll.aidsLevy.toFixed(2)}</strong>
+                                      </div>
+                                    </div>
+                                    <div className="col-6">
+                                      <div className="d-flex justify-content-between">
+                                        <span className="text-muted">NSSA (Employee):</span>
+                                        <strong>{employee.contractCurrency} {fullPayroll.nssaEmployee.toFixed(2)}</strong>
+                                      </div>
+                                    </div>
+                                    <div className="col-6">
+                                      <div className="d-flex justify-content-between">
+                                        <span className="text-info">NSSA (Employer):</span>
+                                        <strong className="text-info">{employee.contractCurrency} {fullPayroll.nssaEmployer.toFixed(2)}</strong>
+                                      </div>
+                                    </div>
+                                    <div className="col-6">
+                                      <div className="d-flex justify-content-between">
+                                        <span className="text-muted">Post-tax Ded.:</span>
+                                        <strong>{employee.contractCurrency} {fullPayroll.postTaxDeductions.toFixed(2)}</strong>
+                                      </div>
+                                    </div>
+                                    <div className="col-6">
+                                      <div className="d-flex justify-content-between">
+                                        <span className="text-muted">Total Deductions:</span>
+                                        <strong className="text-danger">{employee.contractCurrency} {fullPayroll.totalDeductions.toFixed(2)}</strong>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="alert alert-info mt-3 mb-0 small">
+                                    <strong>ℹ️ Note:</strong> These are estimates. Final amounts will be calculated when payroll is processed with YTD adjustments.
                                   </div>
                                 </div>
                               </div>
