@@ -1,7 +1,8 @@
 {
-  "buildCommand": "cd frontend && npm install && npm run build",
+  "buildCommand": "cd frontend && npm ci && npm run build",
   "outputDirectory": "frontend/build",
-  "installCommand": "cd frontend && npm install",
+  "installCommand": "npm --version",
+  "framework": null,
   "headers": [
     {
       "source": "/(.*)",
