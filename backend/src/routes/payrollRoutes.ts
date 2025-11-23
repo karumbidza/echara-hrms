@@ -1,0 +1,29 @@
+import express from 'express';
+import {
+  runPayroll,
+  getPayrollRuns,
+  getPayrollRun,
+  getEmployeePayslips,
+  getPayslip,
+  getSalaryHistory
+} from '../controllers/payrollController';
+import { authenticateToken } from '../middleware/auth';
+
+const router = express.Router();
+
+// All routes require authentication
+router.use(authenticateToken);
+
+// Payroll processing
+router.post('/run', runPayroll);
+router.get('/runs', getPayrollRuns);
+router.get('/runs/:id', getPayrollRun);
+
+// Payslips
+router.get('/employees/:employeeId/payslips', getEmployeePayslips);
+router.get('/payslips/:id', getPayslip);
+
+// Salary history
+router.get('/employees/:employeeId/salary-history', getSalaryHistory);
+
+export default router;

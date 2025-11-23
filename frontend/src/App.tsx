@@ -9,6 +9,9 @@ import Register from './pages/Register';
 import Employees from './pages/Employees';
 import EmployeeForm from './pages/EmployeeForm';
 import Departments from './pages/Departments';
+import Payroll from './pages/Payroll';
+import PayrollRuns from './pages/PayrollRuns';
+import PayrollRunDetail from './pages/PayrollRunDetail';
 
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -67,6 +70,30 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <Departments />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/payroll" 
+              element={
+                <ProtectedRoute>
+                  <Payroll />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/payroll-runs" 
+              element={
+                <ProtectedRoute>
+                  <PayrollRuns />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/payroll-runs/:id" 
+              element={
+                <ProtectedRoute>
+                  <PayrollRunDetail />
                 </ProtectedRoute>
               } 
             />

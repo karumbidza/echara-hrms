@@ -81,7 +81,7 @@ export class NSSAEngine {
    * Get active NSSA rate for given currency and date
    */
   private static async getActiveNSSARate(tenantId: string, currency: string, date: Date) {
-    return await prisma.nssaRate.findFirst({
+    return await prisma.nSSARate.findFirst({
       where: {
         tenantId,
         effectiveFrom: { lte: date },
