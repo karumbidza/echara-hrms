@@ -282,9 +282,12 @@ const Payroll: React.FC = () => {
     <div className="container-fluid py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>Process Payroll</h2>
-        <button className="btn btn-outline-secondary" onClick={() => window.location.href = '/payroll-runs'}>
-          View Payroll Runs
-        </button>
+        <div>
+          <span className="badge bg-info me-2">v1.1.0</span>
+          <button className="btn btn-outline-secondary" onClick={() => window.location.href = '/payroll-runs'}>
+            View Payroll Runs
+          </button>
+        </div>
       </div>
 
       {message && (
