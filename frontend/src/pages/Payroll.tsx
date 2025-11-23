@@ -411,13 +411,13 @@ const Payroll: React.FC = () => {
                         {isExpanded && isSelected && (
                           <tr>
                             <td colSpan={9} style={{ backgroundColor: '#f8f9fa' }}>
-                              <div className="p-3">
-                                <h6 className="mb-3">Earnings & Deductions for {employee.firstName} {employee.lastName}</h6>
-                                <div className="row">
+                              <div className="p-4">
+                                <h5 className="mb-4 text-center">Earnings & Deductions for {employee.firstName} {employee.lastName}</h5>
+                                <div className="row g-4">
                                   {/* Earnings Section */}
-                                  <div className="col-md-6">
-                                    <h6 className="text-success">📈 Earnings (Taxable)</h6>
-                                    <div className="row g-2 mb-2">
+                                  <div className="col-md-4">
+                                    <h6 className="text-success mb-3">📈 Earnings (Taxable)</h6>
+                                    <div className="row g-3 mb-2">
                                       <div className="col-6">
                                         <label className="form-label small">Housing Allowance</label>
                                         <input
