@@ -1,8 +1,4 @@
 {
-  "buildCommand": "cd frontend && npm ci --legacy-peer-deps && npm run build",
-  "outputDirectory": "frontend/build",
-  "installCommand": "npm --version",
-  "framework": null,
   "headers": [
     {
       "source": "/(.*)",
