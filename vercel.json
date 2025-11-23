@@ -1,8 +1,11 @@
 {
-  "buildCommand": "node build.js",
+  "github": {
+    "silent": true
+  },
+  "buildCommand": "cd frontend && npm install --legacy-peer-deps && npm run build",
   "outputDirectory": "frontend/build",
-  "installCommand": "echo 'Dependencies installed via buildCommand'",
-  "framework": null,
+  "devCommand": "cd frontend && npm start",
+  "installCommand": "echo 'Skipping root install'",
   "headers": [
     {
       "source": "/(.*)",
