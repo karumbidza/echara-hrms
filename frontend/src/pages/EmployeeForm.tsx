@@ -10,6 +10,10 @@ interface Department {
   name: string;
 }
 
+interface JobTitle {
+  title: string;
+}
+
 const EmployeeForm: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -19,6 +23,10 @@ const EmployeeForm: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [jobTitles, setJobTitles] = useState<string[]>([]);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [nationalIdFile, setNationalIdFile] = useState<File | null>(null);
+  const [driversLicenseFile, setDriversLicenseFile] = useState<File | null>(null);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -43,6 +51,7 @@ const EmployeeForm: React.FC = () => {
 
   useEffect(() => {
     fetchDepartments();
+    fetchJobTitles();
     if (isEditMode) {
       fetchEmployee();
     }
@@ -57,6 +66,18 @@ const EmployeeForm: React.FC = () => {
       setDepartments(response.data.departments);
     } catch (err) {
       console.error('Failed to fetch departments:', err);
+    }
+  };
+
+  const fetchJobTitles = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/job-titles`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setJobTitles(response.data.jobTitles);
+    } catch (err) {
+      console.error('Failed to fetch job titles:', err);
     }
   };
 
@@ -198,12 +219,13 @@ const EmployeeForm: React.FC = () => {
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>National ID</Form.Label>
+                  <Form.Label>National ID *</Form.Label>
                   <Form.Control
                     type="text"
                     name="nationalId"
                     value={formData.nationalId}
                     onChange={handleChange}
+                    required
                   />
                 </Form.Group>
               </Col>
@@ -255,6 +277,43 @@ const EmployeeForm: React.FC = () => {
                 onChange={handleChange}
               />
             </Form.Group>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Passport Photo *</Form.Label>
+                  <Form.Control
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const files = (e.target as HTMLInputElement).files;
+                      if (files && files[0]) setPhotoFile(files[0]);
+                    }}
+                    required={!isEditMode}
+                  />
+                  <Form.Text className="text-muted">
+                    Passport-size photo (JPG, PNG)
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>National ID Upload *</Form.Label>
+                  <Form.Control
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={(e) => {
+                      const files = (e.target as HTMLInputElement).files;
+                      if (files && files[0]) setNationalIdFile(files[0]);
+                    }}
+                    required={!isEditMode}
+                  />
+                  <Form.Text className="text-muted">
+                    Scanned copy of National ID
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+            </Row>
           </Card.Body>
         </Card>
 
@@ -268,22 +327,30 @@ const EmployeeForm: React.FC = () => {
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Job Title *</Form.Label>
-                  <Form.Control
-                    type="text"
+                  <Form.Select
                     name="jobTitle"
                     value={formData.jobTitle}
                     onChange={handleChange}
                     required
-                  />
+                  >
+                    <option value="">Select Job Title</option>
+                    {jobTitles.map(title => (
+                      <option key={title} value={title}>{title}</option>
+                    ))}
+                  </Form.Select>
+                  <Form.Text className="text-muted">
+                    Select from predefined job titles
+                  </Form.Text>
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Department</Form.Label>
+                  <Form.Label>Department *</Form.Label>
                   <Form.Select
                     name="departmentId"
                     value={formData.departmentId}
                     onChange={handleChange}
+                    required
                   >
                     <option value="">Select Department</option>
                     {departments.map(dept => (
@@ -313,16 +380,35 @@ const EmployeeForm: React.FC = () => {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Hire Date</Form.Label>
+                  <Form.Label>Hire Date *</Form.Label>
                   <Form.Control
                     type="date"
                     name="hireDate"
                     value={formData.hireDate}
                     onChange={handleChange}
+                    required
                   />
                 </Form.Group>
               </Col>
             </Row>
+
+            {formData.jobTitle.toLowerCase().includes('driver') && (
+              <Form.Group className="mb-3">
+                <Form.Label>Driver's License *</Form.Label>
+                <Form.Control
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(e) => {
+                    const files = (e.target as HTMLInputElement).files;
+                    if (files && files[0]) setDriversLicenseFile(files[0]);
+                  }}
+                  required={!isEditMode}
+                />
+                <Form.Text className="text-muted">
+                  Required for driver positions - Upload valid driver's license
+                </Form.Text>
+              </Form.Group>
+            )}
 
             <Form.Group className="mb-3">
               <Form.Check

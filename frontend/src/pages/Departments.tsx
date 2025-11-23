@@ -55,19 +55,14 @@ const Departments: React.FC = () => {
   const fetchOrganizations = async () => {
     try {
       const token = localStorage.getItem('token');
-      // For now, we'll need to fetch the user's organization
-      // You might want to add an organizations endpoint
-      const userResponse = await axios.get(`${API_URL}/auth/profile`, {
+      const response = await axios.get(`${API_URL}/organizations`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      // Mock organization data - in production, you'd have a proper endpoint
-      const mockOrg = {
-        id: userResponse.data.user.tenant.id,
-        name: userResponse.data.user.tenant.name
-      };
-      setOrganizations([mockOrg]);
-      setFormData(prev => ({ ...prev, organizationId: mockOrg.id }));
+      setOrganizations(response.data.organizations);
+      if (response.data.organizations.length > 0) {
+        setFormData(prev => ({ ...prev, organizationId: response.data.organizations[0].id }));
+      }
     } catch (err) {
       console.error('Failed to fetch organizations:', err);
     }

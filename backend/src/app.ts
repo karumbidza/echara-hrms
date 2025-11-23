@@ -8,6 +8,8 @@ import { PrismaClient } from '@prisma/client';
 import authRoutes from './routes/authRoutes';
 import employeeRoutes from './routes/employeeRoutes';
 import departmentRoutes from './routes/departmentRoutes';
+import organizationRoutes from './routes/organizationRoutes';
+import jobTitleRoutes from './routes/jobTitleRoutes';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -32,6 +34,8 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/departments', departmentRoutes);
+app.use('/api/organizations', organizationRoutes);
+app.use('/api/job-titles', jobTitleRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

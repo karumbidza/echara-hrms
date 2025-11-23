@@ -111,6 +111,11 @@ model Employee {
   bankAccount     String?
   nssaNumber      String?
   
+  // Document uploads
+  photoPath         String?
+  nationalIdPath    String?
+  driversLicensePath String?
+  
   // Status
   isActive      Boolean @default(true)
   createdAt     DateTime @default(now())
