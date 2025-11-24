@@ -102,14 +102,22 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    // For super admin, tenantId will be null
+    // For tenant users, tenantId is required
+    const tokenPayload: any = {
+      userId: user.id,
+      email: user.email,
+      role: user.role
+    };
+
+    // Only add tenantId if user belongs to a tenant
+    if (user.tenantId) {
+      tokenPayload.tenantId = user.tenantId;
+    }
+
     // Generate token
     const token = jwt.sign(
-      { 
-        userId: user.id, 
-        email: user.email, 
-        role: user.role,
-        tenantId: user.tenantId 
-      },
+      tokenPayload,
       process.env.JWT_SECRET!,
       { expiresIn: '24h' }
     );
