@@ -212,7 +212,32 @@ export const seedPlans = async (req: Request, res: Response) => {
       });
     }
 
-    res.json({ message: 'Plans seeded successfully', count: plans.length });
+    // Also create super admin if doesn't exist (temporary)
+    const superAdminEmail = 'admin@echara.com';
+    const existingSuperAdmin = await prisma.user.findUnique({
+      where: { email: superAdminEmail }
+    });
+
+    if (!existingSuperAdmin) {
+      const hashedPassword = await bcrypt.hash('SuperAdmin123!', 12);
+      await prisma.user.create({
+        data: {
+          email: superAdminEmail,
+          password: hashedPassword,
+          fullName: 'Super Administrator',
+          role: 'SUPER_ADMIN',
+          isActive: true,
+          tenantId: null
+        }
+      });
+      console.log('✅ Super admin created during plan seeding');
+    }
+
+    res.json({ 
+      message: 'Plans seeded successfully', 
+      count: plans.length,
+      superAdmin: !existingSuperAdmin ? 'Created' : 'Already exists'
+    });
   } catch (error) {
     console.error('Error seeding plans:', error);
     res.status(500).json({ error: 'Failed to seed plans' });
