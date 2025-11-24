@@ -15,6 +15,9 @@ import PayrollRuns from './pages/PayrollRuns';
 import PayrollRunDetail from './pages/PayrollRunDetail';
 import PayrollApprovals from './pages/PayrollApprovals';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import PlatformSettings from './pages/PlatformSettings';
+import SuperAdminPlans from './pages/SuperAdminPlans';
+import SuperAdminRevenue from './pages/SuperAdminRevenue';
 
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -107,6 +110,30 @@ function AppContent() {
               element={
                 <SuperAdminRoute>
                   <SuperAdminDashboard />
+                </SuperAdminRoute>
+              } 
+            />
+            <Route 
+              path="/super-admin/settings" 
+              element={
+                <SuperAdminRoute>
+                  <PlatformSettings />
+                </SuperAdminRoute>
+              } 
+            />
+            <Route 
+              path="/super-admin/plans" 
+              element={
+                <SuperAdminRoute>
+                  <SuperAdminPlans />
+                </SuperAdminRoute>
+              } 
+            />
+            <Route 
+              path="/super-admin/revenue" 
+              element={
+                <SuperAdminRoute>
+                  <SuperAdminRevenue />
                 </SuperAdminRoute>
               } 
             />

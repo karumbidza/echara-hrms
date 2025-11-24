@@ -20,9 +20,9 @@ const Navigation: React.FC = () => {
                   // Super Admin Navigation
                   <>
                     <Nav.Link href="/super-admin">Platform Dashboard</Nav.Link>
-                    <Nav.Link href="/super-admin">Tenants</Nav.Link>
-                    <Nav.Link href="/super-admin">Plans</Nav.Link>
-                    <Nav.Link href="/super-admin">Revenue</Nav.Link>
+                    <Nav.Link href="/super-admin/plans">Plans</Nav.Link>
+                    <Nav.Link href="/super-admin/settings">Settings</Nav.Link>
+                    <Nav.Link href="/super-admin/revenue">Revenue</Nav.Link>
                   </>
                 ) : (
                   // Regular User Navigation
