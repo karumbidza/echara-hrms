@@ -13,6 +13,19 @@ model Tenant {
   slug      String   @unique
   currency  String   @default("USD")
   timezone  String   @default("Africa/Harare")
+  
+  // Company details
+  companyEmail    String?
+  companyPhone    String?
+  companyAddress  String?
+  logo            String?
+  website         String?
+  
+  // Subscription
+  subscriptionStatus SubscriptionStatus @default(TRIAL)
+  trialEndsAt        DateTime?
+  subscriptionEndsAt DateTime?
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -27,6 +40,8 @@ model Tenant {
   nssaRates       NSSARate[]
   currencyRates   CurrencyRate[]
   auditLogs       AuditLog[]
+  subscriptions   Subscription[]
+  payments        Payment[]
 
   @@map("tenants")
 }
@@ -510,3 +525,113 @@ enum PayrollLineType {
   ADJUSTMENT
   OTHER
 }
+
+// Subscription Plans
+model Plan {
+  id          String   @id @default(uuid())
+  name        String   // Starter, Professional, Enterprise
+  slug        String   @unique
+  description String?
+  
+  // Pricing
+  priceUSD    Float    @default(0)
+  priceZWL    Float    @default(0)
+  billingCycle String  @default("MONTHLY") // MONTHLY, ANNUAL
+  
+  // Limits
+  maxEmployees Int     @default(10)
+  maxUsers     Int     @default(3)
+  
+  // Features
+  features    Json?    // Array of features
+  
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  subscriptions Subscription[]
+  
+  @@map("plans")
+}
+
+// Company Subscriptions
+model Subscription {
+  id        String   @id @default(uuid())
+  
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  planId    String
+  plan      Plan     @relation(fields: [planId], references: [id])
+  
+  status    SubscriptionStatus @default(ACTIVE)
+  
+  // Billing
+  startDate     DateTime
+  endDate       DateTime
+  nextBillingDate DateTime?
+  
+  // Pricing at time of subscription
+  amountUSD Float
+  amountZWL Float
+  currency  String @default("USD")
+  
+  cancelledAt DateTime?
+  cancelReason String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  payments Payment[]
+  
+  @@map("subscriptions")
+}
+
+// Payment Transactions
+model Payment {
+  id        String   @id @default(uuid())
+  
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  
+  // Payment details
+  amount       Float
+  currency     String  @default("USD")
+  status       PaymentStatus @default(PENDING)
+  method       String? // PAYNOW, ECOCASH, BANK_TRANSFER
+  
+  // Paynow integration
+  paynowReference String? @unique
+  pollUrl         String?
+  
+  // Metadata
+  description String?
+  metadata    Json?
+  
+  // Timestamps
+  paidAt    DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("payments")
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
