@@ -25,6 +25,8 @@ prisma.$connect()
   .then(() => console.log('✅ Database connected successfully'))
   .catch((err) => console.error('❌ Database connection failed:', err));
 
+console.log('🚀 ECHARA HRMS Backend initializing...');
+
 // Middleware
 const allowedOrigins = [
   'http://localhost:3000',
