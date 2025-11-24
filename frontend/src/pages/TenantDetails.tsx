@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import PaymentVerificationModal from '../components/PaymentVerificationModal';
+import RoleAssignmentModal from '../components/RoleAssignmentModal';
+import PasswordResetModal from '../components/PasswordResetModal';
 
 interface TenantDetails {
   id: string;
@@ -75,6 +77,9 @@ const TenantDetails: React.FC = () => {
   });
   const [alert, setAlert] = useState<{ type: string; message: string } | null>(null);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
@@ -132,6 +137,36 @@ const TenantDetails: React.FC = () => {
       console.error('Error extending trial:', error);
       setAlert({ type: 'danger', message: 'Failed to extend trial' });
     }
+  };
+
+  const handleToggleUserStatus = async (userId: string, currentStatus: boolean) => {
+    if (!window.confirm(`Are you sure you want to ${currentStatus ? 'suspend' : 'activate'} this user?`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(
+        `${API_URL}/user-management/users/${userId}/toggle-status`,
+        { isActive: !currentStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setAlert({ type: 'success', message: `User ${!currentStatus ? 'activated' : 'suspended'} successfully` });
+      fetchTenantDetails();
+    } catch (error) {
+      console.error('Error toggling user status:', error);
+      setAlert({ type: 'danger', message: 'Failed to update user status' });
+    }
+  };
+
+  const handleAssignRole = (user: any) => {
+    setSelectedUser(user);
+    setShowRoleModal(true);
+  };
+
+  const handleResetPassword = (user: any) => {
+    setSelectedUser(user);
+    setShowPasswordModal(true);
   };
 
   const getStatusBadge = (status: string) => {
@@ -416,17 +451,21 @@ const TenantDetails: React.FC = () => {
       {activeTab === 'users' && (
         <div className="card border-0 shadow-sm">
           <div className="card-body">
-            <h5 className="card-title fw-bold mb-3">System Users</h5>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h5 className="card-title fw-bold mb-0">System Users</h5>
+              <span className="badge bg-light text-dark">{tenant.users.length} users</span>
+            </div>
             {tenant.users.length > 0 ? (
               <div className="table-responsive">
-                <table className="table table-hover">
-                  <thead>
+                <table className="table table-hover align-middle">
+                  <thead className="bg-light">
                     <tr>
                       <th>Name</th>
                       <th>Email</th>
                       <th>Role</th>
                       <th>Status</th>
                       <th>Registered</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -435,22 +474,61 @@ const TenantDetails: React.FC = () => {
                         <td className="fw-semibold">{user.fullName}</td>
                         <td>{user.email}</td>
                         <td>
-                          <span className="badge bg-dark">{user.role}</span>
+                          <span className="badge bg-dark">{user.role.replace(/_/g, ' ')}</span>
                         </td>
                         <td>
-                          <span className={`badge ${user.isActive ? 'bg-success' : 'bg-secondary'}`}>
-                            {user.isActive ? 'Active' : 'Inactive'}
+                          <span className={`badge ${user.isActive ? 'bg-success' : 'bg-danger'}`}>
+                            {user.isActive ? 'Active' : 'Suspended'}
                           </span>
                         </td>
-                        <td>{new Date(user.createdAt).toLocaleDateString()}</td>
+                        <td>
+                          <small>{new Date(user.createdAt).toLocaleDateString()}</small>
+                        </td>
+                        <td>
+                          <div className="btn-group btn-group-sm">
+                            <button
+                              className="btn btn-outline-primary"
+                              onClick={() => handleAssignRole(user)}
+                              title="Change Role"
+                            >
+                              <i className="bi bi-person-badge"></i> Role
+                            </button>
+                            <button
+                              className="btn btn-outline-warning"
+                              onClick={() => handleResetPassword(user)}
+                              title="Reset Password"
+                            >
+                              <i className="bi bi-key"></i> Password
+                            </button>
+                            <button
+                              className={`btn ${user.isActive ? 'btn-outline-danger' : 'btn-outline-success'}`}
+                              onClick={() => handleToggleUserStatus(user.id, user.isActive)}
+                              title={user.isActive ? 'Suspend User' : 'Activate User'}
+                            >
+                              {user.isActive ? '⛔ Suspend' : '✓ Activate'}
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             ) : (
-              <p className="text-muted mb-0">No users found</p>
+              <div className="text-center py-5">
+                <p className="text-muted mb-0">No users found</p>
+                <small className="text-muted">The company admin will create users after registration</small>
+              </div>
             )}
+            
+            <div className="mt-4 p-3 bg-light rounded">
+              <h6 className="fw-bold mb-2">🔐 User Management Guide</h6>
+              <small className="text-muted">
+                <strong>Role Assignment:</strong> Set user permissions (Admin, Payroll Officer, Manager, Employee)<br />
+                <strong>Password Reset:</strong> Generate temporary password for locked-out users<br />
+                <strong>Suspend/Activate:</strong> Immediately revoke or restore access (for terminated employees or security)
+              </small>
+            </div>
           </div>
         </div>
       )}
@@ -602,6 +680,36 @@ const TenantDetails: React.FC = () => {
           onClose={() => setSelectedPayment(null)}
           onSuccess={() => {
             setAlert({ type: 'success', message: 'Payment updated successfully' });
+            fetchTenantDetails();
+          }}
+        />
+      )}
+
+      {/* Role Assignment Modal */}
+      {showRoleModal && selectedUser && (
+        <RoleAssignmentModal
+          user={selectedUser}
+          onClose={() => {
+            setShowRoleModal(false);
+            setSelectedUser(null);
+          }}
+          onSuccess={() => {
+            setAlert({ type: 'success', message: 'User role updated successfully' });
+            fetchTenantDetails();
+          }}
+        />
+      )}
+
+      {/* Password Reset Modal */}
+      {showPasswordModal && selectedUser && (
+        <PasswordResetModal
+          user={selectedUser}
+          onClose={() => {
+            setShowPasswordModal(false);
+            setSelectedUser(null);
+          }}
+          onSuccess={() => {
+            setAlert({ type: 'success', message: 'Password reset successfully' });
             fetchTenantDetails();
           }}
         />
