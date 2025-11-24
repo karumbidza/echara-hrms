@@ -7,7 +7,8 @@ import {
   extendTrial,
   getPlans,
   updatePlan,
-  getRecentActivities
+  getRecentActivities,
+  verifyPayment
 } from '../controllers/superAdminController';
 import { authenticateToken } from '../middleware/auth';
 
@@ -31,5 +32,8 @@ router.put('/plans/:id', updatePlan);
 
 // Activities/Audit log
 router.get('/activities', getRecentActivities);
+
+// Payment verification
+router.put('/payments/:id/verify', verifyPayment);
 
 export default router;

@@ -32,8 +32,8 @@ const Landing: React.FC = () => {
                 </button>
               </li>
               <li className="nav-item ms-2">
-                <button className="btn btn-light fw-semibold" onClick={() => navigate('/register')}>
-                  Start Free Trial
+                <button className="btn btn-light fw-semibold" onClick={() => navigate('/request-quote')}>
+                  Get Quote
                 </button>
               </li>
             </ul>
@@ -55,14 +55,14 @@ const Landing: React.FC = () => {
                 Built specifically for Zimbabwean businesses.
               </p>
               <div className="d-flex gap-3">
-                <button className="btn btn-light btn-lg fw-semibold" onClick={() => navigate('/register')}>
-                  Start Free 14-Day Trial
+                <button className="btn btn-light btn-lg fw-semibold" onClick={() => navigate('/request-quote')}>
+                  Get Custom Quote
                 </button>
-                <button className="btn btn-outline-light btn-lg" onClick={() => navigate('/demo')}>
-                  Watch Demo
+                <button className="btn btn-outline-light btn-lg" onClick={() => navigate('/login')}>
+                  Login
                 </button>
               </div>
-              <p className="mt-3 small text-muted">No credit card required • Cancel anytime</p>
+              <p className="mt-3 small text-muted">Personalized pricing • 14-day trial • No obligation</p>
             </div>
             <div className="col-lg-6 text-center">
               <div className="bg-white text-dark rounded shadow-lg p-5">
@@ -237,94 +237,84 @@ const Landing: React.FC = () => {
       <section id="pricing" className="py-5 bg-light">
         <div className="container py-5">
           <div className="text-center mb-5">
-            <h2 className="display-5 fw-bold mb-3">Simple, Transparent Pricing</h2>
-            <p className="lead text-muted">Choose the plan that fits your business</p>
+            <h2 className="display-5 fw-bold mb-3">Flexible Pricing for Your Business</h2>
+            <p className="lead text-muted">We create custom plans tailored to your needs</p>
           </div>
 
-          <div className="row g-4 justify-content-center">
-            {/* Starter Plan */}
-            <div className="col-md-4">
-              <div className="card border-0 shadow h-100">
-                <div className="card-body p-4">
-                  <h4 className="fw-bold mb-3">Starter</h4>
-                  <p className="text-muted">Perfect for small teams</p>
-                  <div className="mb-4">
-                    <h2 className="fw-bold mb-0">$29<small className="text-muted">/month</small></h2>
-                    <small className="text-muted">or ZWL 900/month</small>
-                  </div>
-                  <ul className="list-unstyled mb-4">
-                    <li className="mb-2">✓ Up to 10 employees</li>
-                    <li className="mb-2">✓ 2 user accounts</li>
-                    <li className="mb-2">✓ Payroll processing</li>
-                    <li className="mb-2">✓ Tax calculations</li>
-                    <li className="mb-2">✓ Basic reports</li>
-                    <li className="mb-2">✓ Email support</li>
+          <div className="row g-4 align-items-center">
+            <div className="col-lg-6">
+              <div className="card border-0 shadow-lg p-4">
+                <div className="card-body">
+                  <h3 className="fw-bold mb-4">Why Quote-Based Pricing?</h3>
+                  <p className="text-muted mb-4">
+                    Every business is unique. Instead of one-size-fits-all pricing, we analyze your specific requirements and create a plan that fits your budget and needs.
+                  </p>
+                  <ul className="list-unstyled">
+                    <li className="mb-3">
+                      <h5 className="mb-1">💰 Fair & Transparent</h5>
+                      <p className="text-muted mb-0">Pay only for what you need. No hidden fees.</p>
+                    </li>
+                    <li className="mb-3">
+                      <h5 className="mb-1">🎯 Customized Features</h5>
+                      <p className="text-muted mb-0">Choose the features that matter to your business.</p>
+                    </li>
+                    <li className="mb-3">
+                      <h5 className="mb-1">💵 Multiple Payment Options</h5>
+                      <p className="text-muted mb-0">Pay in USD or ZWL. Bank transfer, Ecocash, or other methods.</p>
+                    </li>
+                    <li className="mb-3">
+                      <h5 className="mb-1">📞 Personalized Support</h5>
+                      <p className="text-muted mb-0">Get a dedicated account manager for your setup.</p>
+                    </li>
                   </ul>
-                  <button className="btn btn-dark w-100" onClick={() => navigate('/register?plan=starter')}>
-                    Start Free Trial
-                  </button>
                 </div>
               </div>
             </div>
 
-            {/* Professional Plan */}
-            <div className="col-md-4">
-              <div className="card border border-dark shadow-lg h-100 position-relative">
-                <div className="position-absolute top-0 start-50 translate-middle">
-                  <span className="badge bg-dark">Most Popular</span>
-                </div>
-                <div className="card-body p-4">
-                  <h4 className="fw-bold mb-3">Professional</h4>
-                  <p className="text-muted">For growing businesses</p>
-                  <div className="mb-4">
-                    <h2 className="fw-bold mb-0">$79<small className="text-muted">/month</small></h2>
-                    <small className="text-muted">or ZWL 2,500/month</small>
-                  </div>
-                  <ul className="list-unstyled mb-4">
-                    <li className="mb-2">✓ Up to 50 employees</li>
-                    <li className="mb-2">✓ 5 user accounts</li>
-                    <li className="mb-2">✓ All Starter features</li>
-                    <li className="mb-2">✓ Approval workflows</li>
-                    <li className="mb-2">✓ Leave management</li>
-                    <li className="mb-2">✓ Advanced reports</li>
-                    <li className="mb-2">✓ Priority support</li>
+            <div className="col-lg-6">
+              <div className="card border-0 shadow-lg p-4 bg-dark text-white">
+                <div className="card-body text-center">
+                  <h1 className="mb-4">📋</h1>
+                  <h3 className="fw-bold mb-3">Request Your Custom Quote</h3>
+                  <p className="mb-4">
+                    Fill out a quick form about your business needs, and we'll send you a personalized quote within 24 hours.
+                  </p>
+                  <ul className="list-unstyled text-start mb-4">
+                    <li className="mb-2">✓ Free consultation & demo</li>
+                    <li className="mb-2">✓ 14-day trial period included</li>
+                    <li className="mb-2">✓ No obligation to purchase</li>
+                    <li className="mb-2">✓ Flexible payment terms</li>
                   </ul>
-                  <button className="btn btn-dark w-100" onClick={() => navigate('/register?plan=professional')}>
-                    Start Free Trial
+                  <button className="btn btn-light btn-lg w-100 fw-semibold mb-2" onClick={() => navigate('/request-quote')}>
+                    Get Custom Quote
                   </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Enterprise Plan */}
-            <div className="col-md-4">
-              <div className="card border-0 shadow h-100">
-                <div className="card-body p-4">
-                  <h4 className="fw-bold mb-3">Enterprise</h4>
-                  <p className="text-muted">For large organizations</p>
-                  <div className="mb-4">
-                    <h2 className="fw-bold mb-0">Custom</h2>
-                    <small className="text-muted">Contact for pricing</small>
-                  </div>
-                  <ul className="list-unstyled mb-4">
-                    <li className="mb-2">✓ Unlimited employees</li>
-                    <li className="mb-2">✓ Unlimited users</li>
-                    <li className="mb-2">✓ All Professional features</li>
-                    <li className="mb-2">✓ Custom integrations</li>
-                    <li className="mb-2">✓ Dedicated account manager</li>
-                    <li className="mb-2">✓ 24/7 phone support</li>
-                    <li className="mb-2">✓ SLA guarantee</li>
-                  </ul>
-                  <button className="btn btn-outline-dark w-100" onClick={() => navigate('/contact')}>
-                    Contact Sales
-                  </button>
+                  <small className="text-muted">Response within 24 hours</small>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="text-center mt-5">
-            <p className="text-muted">All plans include 14-day free trial • No credit card required</p>
+            <div className="row g-4 justify-content-center">
+              <div className="col-md-3">
+                <h4 className="fw-bold mb-2">Small Teams</h4>
+                <p className="text-muted mb-0">10-50 employees</p>
+                <p className="fw-semibold">From $29/month</p>
+              </div>
+              <div className="col-md-3">
+                <h4 className="fw-bold mb-2">Growing Business</h4>
+                <p className="text-muted mb-0">50-200 employees</p>
+                <p className="fw-semibold">From $79/month</p>
+              </div>
+              <div className="col-md-3">
+                <h4 className="fw-bold mb-2">Large Enterprise</h4>
+                <p className="text-muted mb-0">200+ employees</p>
+                <p className="fw-semibold">Custom pricing</p>
+              </div>
+            </div>
+            <p className="text-muted mt-4">
+              <em>Final pricing depends on number of employees, users, and selected features</em>
+            </p>
           </div>
         </div>
       </section>
@@ -334,10 +324,10 @@ const Landing: React.FC = () => {
         <div className="container py-5 text-center">
           <h2 className="display-5 fw-bold mb-4">Ready to Simplify Your Payroll?</h2>
           <p className="lead mb-4">Join hundreds of Zimbabwean businesses already using ECHARA HRMS</p>
-          <button className="btn btn-light btn-lg fw-semibold" onClick={() => navigate('/register')}>
-            Start Your Free Trial Today
+          <button className="btn btn-light btn-lg fw-semibold" onClick={() => navigate('/request-quote')}>
+            Request Your Custom Quote
           </button>
-          <p className="mt-3 small text-muted">14 days free • No credit card required • Cancel anytime</p>
+          <p className="mt-3 small text-muted">Free consultation • 24-hour response • No obligation</p>
         </div>
       </section>
 

@@ -298,3 +298,44 @@ export const getRecentActivities = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: 'Failed to fetch activities' });
   }
 };
+
+// Verify manual payment
+export const verifyPayment = async (req: AuthRequest, res: Response) => {
+  try {
+    if (req.user?.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Access denied. Super admin only.' });
+    }
+
+    const { id } = req.params;
+    const { status, method, notes } = req.body;
+
+    const payment = await prisma.payment.update({
+      where: { id },
+      data: { 
+        status,
+        method,
+        verifiedAt: status === 'PAID' ? new Date() : null,
+        verifiedBy: req.user.id,
+        notes
+      }
+    });
+
+    // If payment is verified, update subscription and tenant status
+    if (status === 'PAID' && payment.subscriptionId) {
+      await prisma.subscription.update({
+        where: { id: payment.subscriptionId },
+        data: { status: 'ACTIVE' }
+      });
+
+      await prisma.tenant.update({
+        where: { id: payment.tenantId },
+        data: { subscriptionStatus: 'ACTIVE' }
+      });
+    }
+
+    res.json({ message: 'Payment updated', payment });
+  } catch (error) {
+    console.error('Error verifying payment:', error);
+    res.status(500).json({ error: 'Failed to verify payment' });
+  }
+};

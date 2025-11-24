@@ -607,6 +607,11 @@ model Payment {
   paynowReference String? @unique
   pollUrl         String?
   
+  // Manual verification (for bank transfers, Ecocash, etc)
+  verifiedAt  DateTime?
+  verifiedBy  String?
+  notes       String?
+  
   // Metadata
   description String?
   metadata    Json?
@@ -617,6 +622,44 @@ model Payment {
   updatedAt DateTime @updatedAt
   
   @@map("payments")
+}
+
+// Quote Requests (from potential customers)
+model QuoteRequest {
+  id        String   @id @default(uuid())
+  
+  // Company details
+  companyName    String
+  companyEmail   String
+  companyPhone   String?
+  contactPerson  String
+  
+  // Requirements
+  estimatedEmployees Int
+  estimatedUsers     Int
+  industry           String?
+  additionalNotes    String?
+  
+  // Preferred plan
+  preferredPlan String? // Starter, Professional, Enterprise
+  currency      String  @default("USD")
+  
+  // Status
+  status        QuoteStatus @default(PENDING)
+  respondedAt   DateTime?
+  respondedBy   String?
+  quoteAmount   Float?
+  quoteCurrency String?
+  quoteNotes    String?
+  
+  // Conversion
+  convertedToTenant Boolean @default(false)
+  tenantId          String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("quote_requests")
 }
 
 // Platform Settings (Super Admin Only)
@@ -659,5 +702,13 @@ enum PaymentStatus {
   FAILED
   REFUNDED
   CANCELLED
+}
+
+enum QuoteStatus {
+  PENDING
+  REVIEWED
+  SENT
+  ACCEPTED
+  REJECTED
 }
 

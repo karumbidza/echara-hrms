@@ -18,6 +18,9 @@ import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import PlatformSettings from './pages/PlatformSettings';
 import SuperAdminPlans from './pages/SuperAdminPlans';
 import SuperAdminRevenue from './pages/SuperAdminRevenue';
+import TenantDetails from './pages/TenantDetails';
+import RequestQuote from './pages/RequestQuote';
+import QuoteRequests from './pages/QuoteRequests';
 
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -87,6 +90,7 @@ function AppContent() {
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Landing />} />
+            <Route path="/request-quote" element={<RequestQuote />} />
             <Route 
               path="/login" 
               element={
@@ -134,6 +138,22 @@ function AppContent() {
               element={
                 <SuperAdminRoute>
                   <SuperAdminRevenue />
+                </SuperAdminRoute>
+              } 
+            />
+            <Route 
+              path="/super-admin/tenants/:id" 
+              element={
+                <SuperAdminRoute>
+                  <TenantDetails />
+                </SuperAdminRoute>
+              } 
+            />
+            <Route 
+              path="/super-admin/quotes" 
+              element={
+                <SuperAdminRoute>
+                  <QuoteRequests />
                 </SuperAdminRoute>
               } 
             />
