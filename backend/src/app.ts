@@ -16,6 +16,7 @@ import payrollApprovalRoutes from './routes/payrollApprovalRoutes';
 import superAdminRoutes from './routes/superAdminRoutes';
 import tenantRoutes from './routes/tenantRoutes';
 import payrollExportRoutes from './routes/payrollExportRoutes';
+import platformSettingsRoutes from './routes/platformSettingsRoutes';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -57,6 +58,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/tenants', tenantRoutes);
 app.use('/api/super-admin', superAdminRoutes);
+app.use('/api/platform', platformSettingsRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/organizations', organizationRoutes);
