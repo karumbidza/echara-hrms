@@ -32,8 +32,12 @@ const Navigation: React.FC = () => {
                     <Nav.Link href="/employees">Employees</Nav.Link>
                     <Nav.Link href="/departments">Departments</Nav.Link>
                     <Nav.Link href="/payroll">Payroll</Nav.Link>
+                    <Nav.Link href="/leave">Leave</Nav.Link>
                     {['ADMIN', 'GENERAL_MANAGER', 'FINANCE_MANAGER'].includes(user.role) && (
-                      <Nav.Link href="/payroll-approvals">Approvals</Nav.Link>
+                      <Nav.Link href="/payroll-approvals">Payroll Approvals</Nav.Link>
+                    )}
+                    {['ADMIN', 'MANAGER'].includes(user.role) && (
+                      <Nav.Link href="/leave-approvals">Leave Approvals</Nav.Link>
                     )}
                   </>
                 )}

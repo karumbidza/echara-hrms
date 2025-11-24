@@ -42,6 +42,8 @@ model Tenant {
   auditLogs       AuditLog[]
   subscriptions   Subscription[]
   payments        Payment[]
+  leavePolicy     LeavePolicy?
+  leaveRequests   LeaveRequest[]
 
   @@map("tenants")
 }
@@ -66,7 +68,7 @@ model User {
   approvedPayrollRuns  PayrollRun[] @relation("PayrollApprover")
   auditLogs            AuditLog[]
   timesheets           Timesheet[]
-  leaves               Leave[]
+  reviewedLeaveRequests LeaveRequest[] @relation("LeaveReviewer")
 
   @@map("users")
 }
@@ -168,7 +170,8 @@ model Employee {
 
   payslips        Payslip[]
   timesheets      Timesheet[]
-  leaves          Leave[]
+  leaveRequests   LeaveRequest[]
+  leaveBalances   LeaveBalance[]
   salaryHistory   SalaryHistory[]
   payrollLines    PayrollLine[]
   taxCalculations TaxCalculation[]
@@ -412,24 +415,96 @@ model Timesheet {
   @@map("timesheets")
 }
 
-model Leave {
-  id        String      @id @default(uuid())
-  type      LeaveType
-  startDate DateTime
-  endDate   DateTime
-  reason    String?
-  status    LeaveStatus @default(PENDING)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+// Leave Management
+model LeavePolicy {
+  id        String   @id @default(uuid())
+  
+  // Annual leave settings
+  annualLeaveDays      Int      @default(22)  // Zimbabwe standard
+  carryOverDays        Int      @default(5)   // Max days to carry to next year
+  
+  // Sick leave settings
+  sickLeaveDaysBeforeCert Int   @default(2)  // Days before medical cert required
+  
+  // Maternity leave
+  maternityLeaveDays   Int      @default(98)  // 14 weeks
+  
+  // Paternity leave
+  paternityLeaveDays   Int      @default(7)   // 1 week
+  
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  
+  // Relations
+  tenantId String   @unique
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@map("leave_policies")
+}
 
+model LeaveBalance {
+  id        String   @id @default(uuid())
+  
+  year      Int      // Leave year (2025, 2026, etc)
+  
+  // Annual leave
+  annualTotal     Decimal  @default(22) @db.Decimal(5, 1)
+  annualUsed      Decimal  @default(0)  @db.Decimal(5, 1)
+  annualBalance   Decimal  @default(22) @db.Decimal(5, 1)
+  annualCarryOver Decimal  @default(0)  @db.Decimal(5, 1)
+  
+  // Sick leave
+  sickUsed        Decimal  @default(0)  @db.Decimal(5, 1)
+  
+  // Other leave
+  maternityUsed   Decimal  @default(0)  @db.Decimal(5, 1)
+  paternityUsed   Decimal  @default(0)  @db.Decimal(5, 1)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
   // Relations
   employeeId String
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  
+  @@unique([employeeId, year])
+  @@map("leave_balances")
+}
 
-  approvedById String?
-  approvedBy   User?   @relation(fields: [approvedById], references: [id])
-
-  @@map("leaves")
+model LeaveRequest {
+  id        String      @id @default(uuid())
+  
+  leaveType       LeaveType
+  startDate       DateTime
+  endDate         DateTime
+  totalDays       Decimal     @db.Decimal(5, 1) // Working days (excludes weekends)
+  halfDay         Boolean     @default(false)
+  
+  reason          String      // Employee's reason
+  attachment      String?     // Medical cert, death cert, etc (file path)
+  
+  status          LeaveStatus @default(PENDING)
+  
+  // Approval workflow
+  reviewedAt      DateTime?
+  reviewNotes     String?     // Manager's approval/rejection notes
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  // Relations
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  reviewedBy      String?
+  reviewer        User?       @relation("LeaveReviewer", fields: [reviewedBy], references: [id])
+  
+  @@index([tenantId, status])
+  @@index([employeeId, status])
+  @@map("leave_requests")
 }
 
 model AuditLog {
@@ -502,7 +577,9 @@ enum LeaveType {
   SICK
   MATERNITY
   PATERNITY
+  COMPASSIONATE
   UNPAID
+  STUDY
 }
 
 enum LeaveStatus {

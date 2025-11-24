@@ -21,6 +21,8 @@ import SuperAdminRevenue from './pages/SuperAdminRevenue';
 import TenantDetails from './pages/TenantDetails';
 import RequestQuote from './pages/RequestQuote';
 import QuoteRequests from './pages/QuoteRequests';
+import Leave from './pages/Leave';
+import LeaveApprovals from './pages/LeaveApprovals';
 
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -228,6 +230,22 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <PayrollApprovals />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/leave" 
+              element={
+                <ProtectedRoute>
+                  <Leave />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/leave-approvals" 
+              element={
+                <ProtectedRoute>
+                  <LeaveApprovals />
                 </ProtectedRoute>
               } 
             />
