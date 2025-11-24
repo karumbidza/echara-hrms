@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { PrismaClient, LeaveStatus, Prisma } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
+import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -655,6 +656,217 @@ export const getPendingCount = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error('Get pending count error:', error);
     res.status(500).json({ error: 'Failed to fetch pending count' });
+  }
+};
+
+/**
+ * Generate leave request token for employee (HR Admin only)
+ */
+export const generateLeaveToken = async (req: AuthRequest, res: Response) => {
+  try {
+    const { employeeId } = req.params;
+    const tenantId = req.user?.tenantId;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID required' });
+    }
+
+    // Only admin can generate tokens
+    if (req.user?.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Only HR admins can generate leave request links' });
+    }
+
+    // Verify employee belongs to tenant
+    const employee = await prisma.employee.findFirst({
+      where: { id: employeeId, tenantId },
+      select: {
+        id: true,
+        employeeNumber: true,
+        firstName: true,
+        lastName: true,
+        email: true
+      }
+    });
+
+    if (!employee) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    // Generate unique token
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenExpiresAt = new Date();
+    tokenExpiresAt.setDate(tokenExpiresAt.getDate() + 30); // Valid for 30 days
+
+    // Create a placeholder leave request with token
+    const leaveRequest = await prisma.leaveRequest.create({
+      data: {
+        employeeId,
+        tenantId,
+        token,
+        tokenExpiresAt,
+        leaveType: 'ANNUAL', // Will be updated by employee
+        startDate: new Date(), // Will be updated by employee
+        endDate: new Date(), // Will be updated by employee
+        totalDays: new Prisma.Decimal(0),
+        reason: 'Pending employee submission',
+        status: 'PENDING',
+        submittedViaEmail: true
+      }
+    });
+
+    const leaveRequestUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/leave-request/${token}`;
+
+    res.json({
+      message: 'Leave request link generated',
+      employee,
+      token,
+      leaveRequestUrl,
+      expiresAt: tokenExpiresAt
+    });
+  } catch (error) {
+    console.error('Generate leave token error:', error);
+    res.status(500).json({ error: 'Failed to generate leave request link' });
+  }
+};
+
+/**
+ * Get leave request by token (public, no auth required)
+ */
+export const getLeaveRequestByToken = async (req: any, res: Response) => {
+  try {
+    const { token } = req.params;
+
+    const leaveRequest = await prisma.leaveRequest.findUnique({
+      where: { token },
+      include: {
+        employee: {
+          select: {
+            employeeNumber: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            department: {
+              select: {
+                name: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!leaveRequest) {
+      return res.status(404).json({ error: 'Invalid leave request link' });
+    }
+
+    // Check if token expired
+    if (leaveRequest.tokenExpiresAt && new Date() > leaveRequest.tokenExpiresAt) {
+      return res.status(410).json({ error: 'This leave request link has expired. Please contact HR.' });
+    }
+
+    // Don't allow editing if already submitted with data
+    if (leaveRequest.status !== 'PENDING' || parseFloat(leaveRequest.totalDays.toString()) > 0) {
+      return res.status(400).json({ 
+        error: 'This leave request has already been submitted',
+        leaveRequest 
+      });
+    }
+
+    res.json({ leaveRequest });
+  } catch (error) {
+    console.error('Get leave request by token error:', error);
+    res.status(500).json({ error: 'Failed to fetch leave request' });
+  }
+};
+
+/**
+ * Submit leave request via token (public, no auth required)
+ */
+export const submitLeaveRequestByToken = async (req: any, res: Response) => {
+  try {
+    const { token } = req.params;
+    const { leaveType, startDate, endDate, halfDay, reason } = req.body;
+
+    const leaveRequest = await prisma.leaveRequest.findUnique({
+      where: { token },
+      include: {
+        employee: true
+      }
+    });
+
+    if (!leaveRequest) {
+      return res.status(404).json({ error: 'Invalid leave request link' });
+    }
+
+    // Check if token expired
+    if (leaveRequest.tokenExpiresAt && new Date() > leaveRequest.tokenExpiresAt) {
+      return res.status(410).json({ error: 'This leave request link has expired. Please contact HR.' });
+    }
+
+    // Check if already submitted
+    if (parseFloat(leaveRequest.totalDays.toString()) > 0) {
+      return res.status(400).json({ error: 'This leave request has already been submitted' });
+    }
+
+    // Calculate working days
+    const totalDays = calculateWorkingDays(new Date(startDate), new Date(endDate), halfDay);
+
+    // Check balance for annual leave
+    if (leaveType === 'ANNUAL') {
+      const year = new Date(startDate).getFullYear();
+      const balance = await prisma.leaveBalance.findUnique({
+        where: { 
+          employeeId_year: { 
+            employeeId: leaveRequest.employeeId, 
+            year 
+          } 
+        }
+      });
+
+      if (!balance) {
+        return res.status(400).json({ 
+          error: 'Leave balance not initialized. Please contact HR.' 
+        });
+      }
+
+      if (parseFloat(balance.annualBalance.toString()) < totalDays) {
+        return res.status(400).json({ 
+          error: `Insufficient leave balance. Available: ${balance.annualBalance} days, Requested: ${totalDays} days` 
+        });
+      }
+    }
+
+    // Update leave request with employee's data
+    const updated = await prisma.leaveRequest.update({
+      where: { id: leaveRequest.id },
+      data: {
+        leaveType,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        totalDays: new Prisma.Decimal(totalDays),
+        halfDay: halfDay || false,
+        reason,
+        status: LeaveStatus.PENDING
+      },
+      include: {
+        employee: {
+          select: {
+            employeeNumber: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    res.json({
+      message: 'Leave request submitted successfully. HR will review and notify you via email.',
+      leaveRequest: updated
+    });
+  } catch (error) {
+    console.error('Submit leave request by token error:', error);
+    res.status(500).json({ error: 'Failed to submit leave request' });
   }
 };
 

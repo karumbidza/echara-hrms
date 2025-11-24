@@ -52,7 +52,8 @@ const LeaveApprovals: React.FC = () => {
       const response = await axios.get(`${API_URL}/leave/requests?status=PENDING`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setRequests(response.data.leaveRequests);
+      // Filter out placeholder requests (totalDays = 0 means not yet submitted by employee)
+      setRequests(response.data.leaveRequests.filter((req: LeaveRequest) => Number(req.totalDays) > 0));
     } catch (error) {
       console.error('Failed to fetch pending requests:', error);
       setMessage({

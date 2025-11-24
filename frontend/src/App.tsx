@@ -23,6 +23,7 @@ import RequestQuote from './pages/RequestQuote';
 import QuoteRequests from './pages/QuoteRequests';
 import Leave from './pages/Leave';
 import LeaveApprovals from './pages/LeaveApprovals';
+import PublicLeaveRequest from './pages/PublicLeaveRequest';
 
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -93,6 +94,7 @@ function AppContent() {
             {/* Public routes */}
             <Route path="/" element={<Landing />} />
             <Route path="/request-quote" element={<RequestQuote />} />
+            <Route path="/leave-request/:token" element={<PublicLeaveRequest />} />
             <Route 
               path="/login" 
               element={

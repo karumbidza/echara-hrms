@@ -474,6 +474,10 @@ model LeaveBalance {
 model LeaveRequest {
   id        String      @id @default(uuid())
   
+  // Unique token for anonymous access (employee doesn't need account)
+  token           String      @unique @default(uuid())
+  tokenExpiresAt  DateTime?   // Optional expiry for security
+  
   leaveType       LeaveType
   startDate       DateTime
   endDate         DateTime
@@ -487,7 +491,11 @@ model LeaveRequest {
   
   // Approval workflow
   reviewedAt      DateTime?
-  reviewNotes     String?     // Manager's approval/rejection notes
+  reviewNotes     String?     // HR admin's approval/rejection notes
+  
+  // Email notification tracking
+  submittedViaEmail Boolean   @default(true)  // Track if submitted via email link
+  notificationSent  Boolean   @default(false) // Track if approval email sent
   
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -504,6 +512,7 @@ model LeaveRequest {
   
   @@index([tenantId, status])
   @@index([employeeId, status])
+  @@index([token])
   @@map("leave_requests")
 }
 
