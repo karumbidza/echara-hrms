@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Container } from 'react-bootstrap';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navigation from './components/Navigation';
+import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -13,6 +14,7 @@ import Payroll from './pages/Payroll';
 import PayrollRuns from './pages/PayrollRuns';
 import PayrollRunDetail from './pages/PayrollRunDetail';
 import PayrollApprovals from './pages/PayrollApprovals';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
 
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -25,15 +27,77 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return user ? <>{children}</> : <Navigate to="/login" />;
 };
 
+// Super Admin Route component
+const SuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div className="text-center mt-5">Loading...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  // Check if user has SUPER_ADMIN role
+  if (user.role !== 'SUPER_ADMIN') {
+    return <Navigate to="/dashboard" />;
+  }
+
+  return <>{children}</>;
+};
+
+// Public Route component (redirects to dashboard if already logged in)
+const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div className="text-center mt-5">Loading...</div>;
+  }
+
+  return user ? <Navigate to="/dashboard" /> : <>{children}</>;
+};
+
 function AppContent() {
+  const { user } = useAuth();
+  
   return (
     <Router>
       <div className="App">
-        <Navigation />
+        {/* Only show Navigation if logged in */}
+        {user && <Navigation />}
         <Container fluid>
           <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            {/* Public routes */}
+            <Route path="/" element={<Landing />} />
+            <Route 
+              path="/login" 
+              element={
+                <PublicRoute>
+                  <Login />
+                </PublicRoute>
+              } 
+            />
+            <Route 
+              path="/register" 
+              element={
+                <PublicRoute>
+                  <Register />
+                </PublicRoute>
+              } 
+            />
+            
+            {/* Super Admin routes */}
+            <Route 
+              path="/super-admin" 
+              element={
+                <SuperAdminRoute>
+                  <SuperAdminDashboard />
+                </SuperAdminRoute>
+              } 
+            />
+            
+            {/* Protected routes */}
             <Route 
               path="/dashboard" 
               element={
@@ -106,7 +170,6 @@ function AppContent() {
                 </ProtectedRoute>
               } 
             />
-            <Route path="/" element={<Navigate to="/dashboard" />} />
           </Routes>
         </Container>
       </div>

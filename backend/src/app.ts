@@ -13,6 +13,9 @@ import jobTitleRoutes from './routes/jobTitleRoutes';
 import payrollRoutes from './routes/payrollRoutes';
 import taxTableRoutes from './routes/taxTableRoutes';
 import payrollApprovalRoutes from './routes/payrollApprovalRoutes';
+import superAdminRoutes from './routes/superAdminRoutes';
+import tenantRoutes from './routes/tenantRoutes';
+import payrollExportRoutes from './routes/payrollExportRoutes';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -50,11 +53,14 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/tenants', tenantRoutes);
+app.use('/api/super-admin', superAdminRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/job-titles', jobTitleRoutes);
 app.use('/api/payroll/approval', payrollApprovalRoutes); // Must be before /api/payroll
+app.use('/api/payroll/export', payrollExportRoutes);
 app.use('/api/payroll', payrollRoutes);
 app.use('/api/tax-tables', taxTableRoutes);
 
@@ -65,16 +71,6 @@ app.get('/api/health', (req, res) => {
     message: 'ECHARA HRMS Server is running',
     timestamp: new Date().toISOString()
   });
-});
-
-// Basic tenant route (protected)
-app.get('/api/tenants', async (req, res) => {
-  try {
-    const tenants = await prisma.tenant.findMany();
-    res.json(tenants);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch tenants' });
-  }
 });
 
 // Error handling middleware
