@@ -16,12 +16,25 @@ const Navigation: React.FC = () => {
           <Nav className="me-auto">
             {user && (
               <>
-                <Nav.Link href="/dashboard">Dashboard</Nav.Link>
-                <Nav.Link href="/employees">Employees</Nav.Link>
-                <Nav.Link href="/departments">Departments</Nav.Link>
-                <Nav.Link href="/payroll">Payroll</Nav.Link>
-                {['ADMIN', 'GENERAL_MANAGER', 'FINANCE_MANAGER'].includes(user.role) && (
-                  <Nav.Link href="/payroll-approvals">Approvals</Nav.Link>
+                {user.role === 'SUPER_ADMIN' ? (
+                  // Super Admin Navigation
+                  <>
+                    <Nav.Link href="/super-admin">Platform Dashboard</Nav.Link>
+                    <Nav.Link href="/super-admin">Tenants</Nav.Link>
+                    <Nav.Link href="/super-admin">Plans</Nav.Link>
+                    <Nav.Link href="/super-admin">Revenue</Nav.Link>
+                  </>
+                ) : (
+                  // Regular User Navigation
+                  <>
+                    <Nav.Link href="/dashboard">Dashboard</Nav.Link>
+                    <Nav.Link href="/employees">Employees</Nav.Link>
+                    <Nav.Link href="/departments">Departments</Nav.Link>
+                    <Nav.Link href="/payroll">Payroll</Nav.Link>
+                    {['ADMIN', 'GENERAL_MANAGER', 'FINANCE_MANAGER'].includes(user.role) && (
+                      <Nav.Link href="/payroll-approvals">Approvals</Nav.Link>
+                    )}
+                  </>
                 )}
               </>
             )}
@@ -30,7 +43,8 @@ const Navigation: React.FC = () => {
             {user ? (
               <>
                 <Navbar.Text className="me-3">
-                  Signed in as: {user.fullName} ({user.role})
+                  {user.role === 'SUPER_ADMIN' ? '👑 ' : ''}
+                  {user.fullName} ({user.role})
                 </Navbar.Text>
                 <Button variant="outline-light" onClick={logout}>
                   Logout

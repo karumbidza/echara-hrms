@@ -24,7 +24,16 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     return <div className="text-center mt-5">Loading...</div>;
   }
 
-  return user ? <>{children}</> : <Navigate to="/login" />;
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  // Redirect super admin to their dashboard if they try to access tenant routes
+  if (user.role === 'SUPER_ADMIN') {
+    return <Navigate to="/super-admin" />;
+  }
+
+  return <>{children}</>;
 };
 
 // Super Admin Route component
@@ -55,7 +64,12 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return <div className="text-center mt-5">Loading...</div>;
   }
 
-  return user ? <Navigate to="/dashboard" /> : <>{children}</>;
+  // Redirect super admin to their dashboard, regular users to normal dashboard
+  if (user) {
+    return user.role === 'SUPER_ADMIN' ? <Navigate to="/super-admin" /> : <Navigate to="/dashboard" />;
+  }
+
+  return <>{children}</>;
 };
 
 function AppContent() {
