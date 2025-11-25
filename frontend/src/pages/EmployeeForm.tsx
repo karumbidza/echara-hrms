@@ -169,7 +169,12 @@ const EmployeeForm: React.FC = () => {
 
       setTimeout(() => navigate('/employees'), 1500);
     } catch (err: any) {
-      setError(err.response?.data?.error || `Failed to ${isEditMode ? 'update' : 'create'} employee`);
+      console.error('Employee form error:', err);
+      console.error('Error response:', err.response?.data);
+      const errorMsg = err.response?.data?.error || `Failed to ${isEditMode ? 'update' : 'create'} employee`;
+      const errorDetails = err.response?.data?.details ? ` (${err.response.data.details})` : '';
+      const errorCode = err.response?.data?.code ? ` [${err.response.data.code}]` : '';
+      setError(errorMsg + errorDetails + errorCode);
     } finally {
       setLoading(false);
     }
