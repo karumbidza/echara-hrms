@@ -1,9 +1,9 @@
 import React from 'react';
-import { Navbar, Nav, Container, Button } from 'react-bootstrap';
+import { Navbar, Nav, Container, Button, NavDropdown } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
 
 const Navigation: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, hasFeature } = useAuth();
 
   return (
     <Navbar bg="dark" variant="dark" expand="lg">
@@ -26,21 +26,44 @@ const Navigation: React.FC = () => {
                     <Nav.Link href="/super-admin/revenue">Revenue</Nav.Link>
                   </>
                 ) : (
-                  // Regular User Navigation
+                  // Regular User Navigation with Feature Flags
                   <>
                     <Nav.Link href="/dashboard">Dashboard</Nav.Link>
-                    <Nav.Link href="/employees">Employees</Nav.Link>
-                    <Nav.Link href="/departments">Departments</Nav.Link>
-                    <Nav.Link href="/payroll">Payroll</Nav.Link>
-                    <Nav.Link href="/leave">Leave</Nav.Link>
-                    {['ADMIN', 'MANAGER'].includes(user.role) && (
-                      <Nav.Link href="/contracts">Contracts</Nav.Link>
+                    
+                    {/* Control Center Group */}
+                    {(hasFeature('employees') || hasFeature('departments') || (hasFeature('contracts') && ['ADMIN', 'MANAGER'].includes(user.role))) && (
+                      <NavDropdown title="Control Center" id="control-center-dropdown">
+                        {hasFeature('employees') && (
+                          <NavDropdown.Item href="/employees">Employees</NavDropdown.Item>
+                        )}
+                        {hasFeature('departments') && (
+                          <NavDropdown.Item href="/departments">Departments</NavDropdown.Item>
+                        )}
+                        {hasFeature('contracts') && ['ADMIN', 'MANAGER'].includes(user.role) && (
+                          <NavDropdown.Item href="/contracts">Contracts</NavDropdown.Item>
+                        )}
+                      </NavDropdown>
                     )}
-                    {['ADMIN', 'GENERAL_MANAGER', 'FINANCE_MANAGER'].includes(user.role) && (
-                      <Nav.Link href="/payroll-approvals">Payroll Approvals</Nav.Link>
+
+                    {/* Approvals Group */}
+                    {((hasFeature('leaveApprovals') && ['ADMIN', 'MANAGER'].includes(user.role)) || 
+                      (hasFeature('payrollApprovals') && ['ADMIN', 'GENERAL_MANAGER', 'FINANCE_MANAGER'].includes(user.role))) && (
+                      <NavDropdown title="Approvals" id="approvals-dropdown">
+                        {hasFeature('leaveApprovals') && ['ADMIN', 'MANAGER'].includes(user.role) && (
+                          <NavDropdown.Item href="/leave-approvals">Leave Approvals</NavDropdown.Item>
+                        )}
+                        {hasFeature('payrollApprovals') && ['ADMIN', 'GENERAL_MANAGER', 'FINANCE_MANAGER'].includes(user.role) && (
+                          <NavDropdown.Item href="/payroll-approvals">Payroll Approvals</NavDropdown.Item>
+                        )}
+                      </NavDropdown>
                     )}
-                    {['ADMIN', 'MANAGER'].includes(user.role) && (
-                      <Nav.Link href="/leave-approvals">Leave Approvals</Nav.Link>
+
+                    {/* Standalone Items */}
+                    {hasFeature('payroll') && (
+                      <Nav.Link href="/payroll">Payroll</Nav.Link>
+                    )}
+                    {hasFeature('leave') && (
+                      <Nav.Link href="/leave">Leave</Nav.Link>
                     )}
                   </>
                 )}

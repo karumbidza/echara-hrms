@@ -9,12 +9,32 @@ interface User {
   fullName: string;
   role: string;
   tenantId: string;
-  tenant?: any;
+  tenant?: {
+    id: string;
+    name: string;
+    subscriptionStatus?: string;
+    features?: string[];
+  };
+}
+
+interface TenantFeatures {
+  employees: boolean;
+  departments: boolean;
+  contracts: boolean;
+  payroll: boolean;
+  leave: boolean;
+  leaveApprovals: boolean;
+  payrollApprovals: boolean;
+  reports: boolean;
+  timesheets: boolean;
+  documents: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
+  features: TenantFeatures;
+  hasFeature: (feature: keyof TenantFeatures) => boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
   logout: () => void;
@@ -35,6 +55,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
+  const [features, setFeatures] = useState<TenantFeatures>({
+    employees: true,
+    departments: true,
+    contracts: true,
+    payroll: true,
+    leave: true,
+    leaveApprovals: true,
+    payrollApprovals: true,
+    reports: false,
+    timesheets: false,
+    documents: true
+  });
+
+  // Check if tenant has a specific feature
+  const hasFeature = (feature: keyof TenantFeatures): boolean => {
+    return features[feature] || false;
+  };
+
+  // Load features based on tenant subscription
+  const loadTenantFeatures = (userData: User) => {
+    const tenantFeatures = userData.tenant?.features || [];
+    
+    // Default features for all plans
+    const defaultFeatures: TenantFeatures = {
+      employees: true,
+      departments: true,
+      contracts: false,
+      payroll: true,
+      leave: true,
+      leaveApprovals: false,
+      payrollApprovals: false,
+      reports: false,
+      timesheets: false,
+      documents: false
+    };
+
+    // If tenant has features array, use it
+    if (tenantFeatures.length > 0) {
+      tenantFeatures.forEach((feature: string) => {
+        if (feature in defaultFeatures) {
+          defaultFeatures[feature as keyof TenantFeatures] = true;
+        }
+      });
+    }
+
+    setFeatures(defaultFeatures);
+  };
 
   // Set auth token for axios
   useEffect(() => {
@@ -54,6 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const response = await axios.get(`${API_URL}/auth/profile`);
           setUser(response.data.user);
+          loadTenantFeatures(response.data.user);
         } catch (error) {
           console.error('Auth check failed:', error);
           localStorage.removeItem('token');
@@ -76,6 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { user, token } = response.data;
       setUser(user);
       setToken(token);
+      loadTenantFeatures(user);
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Login failed');
     }
@@ -88,6 +157,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { user, token } = response.data;
       setUser(user);
       setToken(token);
+      loadTenantFeatures(user);
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Registration failed');
     }
@@ -100,7 +170,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, features, hasFeature, login, register, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

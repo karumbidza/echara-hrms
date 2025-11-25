@@ -88,7 +88,23 @@ export const login = async (req: Request, res: Response) => {
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
-        tenant: true
+        tenant: {
+          include: {
+            subscriptions: {
+              where: {
+                status: 'ACTIVE'
+              },
+              include: {
+                plan: {
+                  select: {
+                    features: true
+                  }
+                }
+              },
+              take: 1
+            }
+          }
+        }
       }
     });
 
@@ -122,6 +138,13 @@ export const login = async (req: Request, res: Response) => {
       { expiresIn: '24h' }
     );
 
+    // Extract features from active subscription
+    let features: string[] = [];
+    if (user.tenant && user.tenant.subscriptions.length > 0) {
+      const planFeatures = user.tenant.subscriptions[0].plan.features;
+      features = Array.isArray(planFeatures) ? planFeatures.filter((f): f is string => typeof f === 'string') : [];
+    }
+
     res.json({
       message: 'Login successful',
       user: {
@@ -130,7 +153,12 @@ export const login = async (req: Request, res: Response) => {
         fullName: user.fullName,
         role: user.role,
         tenantId: user.tenantId,
-        tenant: user.tenant
+        tenant: user.tenant ? {
+          id: user.tenant.id,
+          name: user.tenant.name,
+          subscriptionStatus: user.tenant.subscriptionStatus,
+          features
+        } : null
       },
       token
     });
@@ -151,7 +179,26 @@ export const getProfile = async (req: Request, res: Response) => {
         fullName: true,
         role: true,
         tenantId: true,
-        tenant: true
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+            subscriptionStatus: true,
+            subscriptions: {
+              where: {
+                status: 'ACTIVE'
+              },
+              select: {
+                plan: {
+                  select: {
+                    features: true
+                  }
+                }
+              },
+              take: 1
+            }
+          }
+        }
       }
     });
 
@@ -159,7 +206,24 @@ export const getProfile = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json({ user });
+    // Extract features from active subscription
+    let features: string[] = [];
+    if (user.tenant && user.tenant.subscriptions.length > 0) {
+      const planFeatures = user.tenant.subscriptions[0].plan.features;
+      features = Array.isArray(planFeatures) ? planFeatures.filter((f): f is string => typeof f === 'string') : [];
+    }
+
+    // Add features to tenant object
+    const userData = {
+      ...user,
+      tenant: user.tenant ? {
+        ...user.tenant,
+        features,
+        subscriptions: undefined // Remove subscriptions from response
+      } : null
+    };
+
+    res.json({ user: userData });
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ error: 'Internal server error' });
