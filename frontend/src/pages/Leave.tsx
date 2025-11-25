@@ -1,3 +1,4 @@
+// Leave Management - HR Admin Dashboard
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Button, Form, Alert, Badge, Table, Modal, InputGroup } from 'react-bootstrap';
 import axios from 'axios';
