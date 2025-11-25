@@ -150,14 +150,14 @@ const EmployeeForm: React.FC = () => {
       
       // Parse all numeric fields
       const numericFields = {
-        basicSalary: parseFloat(formData.basicSalary) || 0,
-        defaultHousingAllowance: parseFloat(formData.defaultHousingAllowance) || 0,
-        defaultTransportAllowance: parseFloat(formData.defaultTransportAllowance) || 0,
-        defaultMealAllowance: parseFloat(formData.defaultMealAllowance) || 0,
-        defaultOtherAllowances: parseFloat(formData.defaultOtherAllowances) || 0,
-        defaultPensionContribution: parseFloat(formData.defaultPensionContribution) || 0,
-        defaultMedicalAid: parseFloat(formData.defaultMedicalAid) || 0,
-        defaultMonthlyLeaveRate: formData.defaultMonthlyLeaveRate ? parseFloat(formData.defaultMonthlyLeaveRate.toString()) || 0 : 0
+        basicSalary: parseFloat(formData.basicSalary.toString()) || 0,
+        defaultHousingAllowance: parseFloat(formData.defaultHousingAllowance.toString()) || 0,
+        defaultTransportAllowance: parseFloat(formData.defaultTransportAllowance.toString()) || 0,
+        defaultMealAllowance: parseFloat(formData.defaultMealAllowance.toString()) || 0,
+        defaultOtherAllowances: parseFloat(formData.defaultOtherAllowances.toString()) || 0,
+        defaultPensionContribution: parseFloat(formData.defaultPensionContribution.toString()) || 0,
+        defaultMedicalAid: parseFloat(formData.defaultMedicalAid.toString()) || 0,
+        defaultMonthlyLeaveRate: parseFloat(formData.defaultMonthlyLeaveRate.toString()) || 0
       };
       
       const payload = {
