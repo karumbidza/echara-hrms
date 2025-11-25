@@ -65,6 +65,12 @@ const Navigation: React.FC = () => {
                     {hasFeature('leave') && (
                       <Nav.Link href="/leave">Leave</Nav.Link>
                     )}
+                    {hasFeature('timesheets') && (
+                      <Nav.Link href="/timesheets">Timesheets</Nav.Link>
+                    )}
+                    {hasFeature('reports') && ['ADMIN', 'GENERAL_MANAGER', 'FINANCE_MANAGER'].includes(user.role) && (
+                      <Nav.Link href="/reports">Reports</Nav.Link>
+                    )}
                   </>
                 )}
               </>

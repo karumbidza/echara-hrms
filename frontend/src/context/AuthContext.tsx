@@ -63,8 +63,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     leave: true,
     leaveApprovals: true,
     payrollApprovals: true,
-    reports: false,
-    timesheets: false,
+    reports: true,
+    timesheets: true,
     documents: true
   });
 
@@ -77,22 +77,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loadTenantFeatures = (userData: User) => {
     const tenantFeatures = userData.tenant?.features || [];
     
-    // Default features for all plans
+    // Default ALL features to TRUE for now (will be controlled via super-admin later)
     const defaultFeatures: TenantFeatures = {
       employees: true,
       departments: true,
-      contracts: false,
+      contracts: true,
       payroll: true,
       leave: true,
-      leaveApprovals: false,
-      payrollApprovals: false,
-      reports: false,
-      timesheets: false,
-      documents: false
+      leaveApprovals: true,
+      payrollApprovals: true,
+      reports: true,
+      timesheets: true,
+      documents: true
     };
 
-    // If tenant has features array, use it
+    // If tenant has features array, use it (when super-admin feature control is implemented)
     if (tenantFeatures.length > 0) {
+      // Reset all to false first
+      Object.keys(defaultFeatures).forEach(key => {
+        defaultFeatures[key as keyof TenantFeatures] = false;
+      });
+      
+      // Enable only features in the tenant's plan
       tenantFeatures.forEach((feature: string) => {
         if (feature in defaultFeatures) {
           defaultFeatures[feature as keyof TenantFeatures] = true;
