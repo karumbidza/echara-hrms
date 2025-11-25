@@ -1,15 +1,11 @@
 {
   "version": 2,
   "name": "echara-hrms-frontend",
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build"
-      }
-    }
-  ],
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/build",
+  "framework": null,
+  "installCommand": "cd frontend && npm install",
+  "devCommand": "cd frontend && npm start",
   "routes": [
     {
       "src": "/static/(.*)",
