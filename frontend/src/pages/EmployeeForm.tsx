@@ -147,8 +147,9 @@ const EmployeeForm: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const payload = {
-        ...formData,
+      
+      // Parse all numeric fields
+      const numericFields = {
         basicSalary: parseFloat(formData.basicSalary) || 0,
         defaultHousingAllowance: parseFloat(formData.defaultHousingAllowance) || 0,
         defaultTransportAllowance: parseFloat(formData.defaultTransportAllowance) || 0,
@@ -156,7 +157,12 @@ const EmployeeForm: React.FC = () => {
         defaultOtherAllowances: parseFloat(formData.defaultOtherAllowances) || 0,
         defaultPensionContribution: parseFloat(formData.defaultPensionContribution) || 0,
         defaultMedicalAid: parseFloat(formData.defaultMedicalAid) || 0,
-        defaultMonthlyLeaveRate: formData.defaultMonthlyLeaveRate ? parseFloat(formData.defaultMonthlyLeaveRate) : 0,
+        defaultMonthlyLeaveRate: formData.defaultMonthlyLeaveRate ? parseFloat(formData.defaultMonthlyLeaveRate.toString()) || 0 : 0
+      };
+      
+      const payload = {
+        ...formData,
+        ...numericFields,
         dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString() : null,
         hireDate: formData.hireDate ? new Date(formData.hireDate).toISOString() : null,
         departmentId: formData.departmentId || null
