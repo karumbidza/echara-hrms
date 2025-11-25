@@ -22,6 +22,7 @@ import quoteRoutes from './routes/quoteRoutes';
 import userManagementRoutes from './routes/userManagementRoutes';
 import leaveRoutes from './routes/leaveRoutes';
 import contractRoutes from './routes/contractRoutes';
+import reportRoutes from './routes/reportRoutes';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -79,6 +80,7 @@ app.use('/api/payroll', payrollRoutes);
 app.use('/api/tax-tables', taxTableRoutes);
 app.use('/api/leave', leaveRoutes);
 app.use('/api/contracts', contractRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

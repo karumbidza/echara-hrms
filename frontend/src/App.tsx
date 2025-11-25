@@ -26,6 +26,7 @@ import Leave from './pages/Leave';
 import LeaveApprovals from './pages/LeaveApprovals';
 import PublicLeaveRequest from './pages/PublicLeaveRequest';
 import ContractNotifications from './pages/ContractNotifications';
+import Reports from './pages/Reports';
 
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -266,6 +267,14 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <ContractNotifications />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/reports" 
+              element={
+                <ProtectedRoute>
+                  <Reports />
                 </ProtectedRoute>
               } 
             />
