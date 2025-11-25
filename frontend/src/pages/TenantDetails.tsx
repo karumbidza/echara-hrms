@@ -5,7 +5,7 @@ import PaymentVerificationModal from '../components/PaymentVerificationModal';
 import RoleAssignmentModal from '../components/RoleAssignmentModal';
 import PasswordResetModal from '../components/PasswordResetModal';
 
-interface TenantDetails {
+interface ITenantDetails {
   id: string;
   name: string;
   slug: string;
@@ -67,7 +67,7 @@ interface TenantDetails {
 const TenantDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [tenant, setTenant] = useState<TenantDetails | null>(null);
+  const [tenant, setTenant] = useState<ITenantDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [editMode, setEditMode] = useState(false);

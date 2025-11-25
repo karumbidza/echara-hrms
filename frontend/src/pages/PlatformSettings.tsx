@@ -9,7 +9,7 @@ interface TaxBracket {
   deduction: number;
 }
 
-interface PlatformSettings {
+interface IPlatformSettings {
   id: string;
   taxYear: number;
   taxBrackets: TaxBracket[];
@@ -23,7 +23,7 @@ interface PlatformSettings {
 }
 
 const PlatformSettings: React.FC = () => {
-  const [settings, setSettings] = useState<PlatformSettings | null>(null);
+  const [settings, setSettings] = useState<IPlatformSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
