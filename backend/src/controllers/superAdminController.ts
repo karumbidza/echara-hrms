@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -127,8 +128,18 @@ export const getTenantDetails = async (req: AuthRequest, res: Response) => {
             employeeNumber: true,
             firstName: true,
             lastName: true,
+            email: true,
             jobTitle: true,
-            isActive: true
+            isActive: true,
+            userId: true,
+            user: {
+              select: {
+                id: true,
+                email: true,
+                role: true,
+                isActive: true
+              }
+            }
           }
         },
         subscriptions: {
@@ -448,3 +459,81 @@ export const updateUserRole = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: 'Failed to update user role' });
   }
 };
+
+// Create user account from employee
+export const createUserFromEmployee = async (req: AuthRequest, res: Response) => {
+  try {
+    if (req.user?.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Access denied. Super admin only.' });
+    }
+
+    const { id: tenantId, employeeId } = req.params;
+    const { role = 'EMPLOYEE', tempPassword } = req.body;
+
+    if (!tempPassword || tempPassword.length < 6) {
+      return res.status(400).json({ error: 'Temporary password must be at least 6 characters' });
+    }
+
+    // Verify employee exists and belongs to tenant
+    const employee = await prisma.employee.findFirst({
+      where: {
+        id: employeeId,
+        tenantId: tenantId,
+        userId: null // Employee should not already have a user account
+      }
+    });
+
+    if (!employee) {
+      return res.status(404).json({ error: 'Employee not found, does not belong to this tenant, or already has a user account' });
+    }
+
+    if (!employee.email) {
+      return res.status(400).json({ error: 'Employee must have an email address to create user account' });
+    }
+
+    // Check if email is already in use
+    const existingUser = await prisma.user.findUnique({
+      where: { email: employee.email }
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email address is already in use by another user' });
+    }
+
+    // Hash the temporary password
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    // Create user account
+    const newUser = await prisma.user.create({
+      data: {
+        email: employee.email,
+        password: hashedPassword,
+        fullName: `${employee.firstName} ${employee.lastName}`,
+        role: role,
+        tenantId: tenantId,
+        isActive: true
+      }
+    });
+
+    // Link employee to user
+    await prisma.employee.update({
+      where: { id: employeeId },
+      data: { userId: newUser.id }
+    });
+
+    res.json({ 
+      message: 'User account created successfully',
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        fullName: newUser.fullName,
+        role: newUser.role
+      },
+      tempPassword: tempPassword // Return temp password for super admin to give to user
+    });
+  } catch (error) {
+    console.error('Error creating user from employee:', error);
+    res.status(500).json({ error: 'Failed to create user account' });
+  }
+};
+

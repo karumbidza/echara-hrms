@@ -70,6 +70,7 @@ model User {
   auditLogs            AuditLog[]
   timesheets           Timesheet[]
   reviewedLeaveRequests LeaveRequest[] @relation("LeaveReviewer")
+  employee             Employee? // One-to-one with Employee
 
   @@map("users")
 }
@@ -177,6 +178,10 @@ model Employee {
 
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id])
+
+  // User account (if employee has system access)
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
 
   payslips        Payslip[]
   timesheets      Timesheet[]

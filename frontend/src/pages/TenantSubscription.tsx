@@ -26,12 +26,31 @@ interface User {
   isActive: boolean;
 }
 
+interface Employee {
+  id: string;
+  employeeNumber: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  jobTitle: string;
+  isActive: boolean;
+  userId: string | null;
+  user: {
+    id: string;
+    email: string;
+    fullName?: string;
+    role: string;
+    isActive: boolean;
+  } | null;
+}
+
 interface Tenant {
   id: string;
   name: string;
   subscriptionStatus: string;
   subscriptions: Subscription[];
   users: User[];
+  employees: Employee[];
   _count: {
     employees: number;
     users: number;
@@ -87,6 +106,14 @@ const TenantSubscription: React.FC = () => {
   const [showUserModal, setShowUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState('');
+
+  // Create user from employee modal
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [newUserRole, setNewUserRole] = useState('EMPLOYEE');
+  const [tempPassword, setTempPassword] = useState('');
+  const [generatedPassword, setGeneratedPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     fetchTenantDetails();
@@ -172,6 +199,61 @@ const TenantSubscription: React.FC = () => {
       fetchTenantDetails();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to update user role');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setTempPassword(password);
+  };
+
+  const handleEmployeeClick = (employee: Employee) => {
+    if (employee.userId) {
+      // Already has user account - show warning or edit
+      setError('This employee already has a user account');
+      return;
+    }
+    if (!employee.email) {
+      setError('This employee does not have an email address. Please add an email first.');
+      return;
+    }
+    setSelectedEmployee(employee);
+    setNewUserRole('EMPLOYEE');
+    setTempPassword('');
+    setGeneratedPassword('');
+    setShowPassword(false);
+    setShowCreateUserModal(true);
+  };
+
+  const handleCreateUser = async () => {
+    if (!selectedEmployee || !tempPassword) {
+      setError('Please enter a temporary password');
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `${API_URL}/super-admin/tenants/${id}/employees/${selectedEmployee.id}/create-user`,
+        { role: newUserRole, tempPassword },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setGeneratedPassword(response.data.tempPassword);
+      setShowPassword(true);
+      setSuccess(`User account created for ${selectedEmployee.firstName} ${selectedEmployee.lastName}`);
+      fetchTenantDetails();
+      // Don't close modal yet - show password
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to create user account');
+      setSaving(false);
     } finally {
       setSaving(false);
     }
@@ -298,45 +380,67 @@ const TenantSubscription: React.FC = () => {
         <Col md={4}>
           <Card>
             <Card.Header className="bg-info text-white">
-              <h5 className="mb-0">👥 User Management</h5>
+              <h5 className="mb-0">👥 Employee & User Management</h5>
             </Card.Header>
             <Card.Body>
-              <p className="small text-muted">Click on a user to assign roles</p>
+              <p className="small text-muted">
+                Click on an employee to create a user account or manage roles
+              </p>
+              
+              {/* Employees List */}
+              <h6 className="text-primary mt-3 mb-2">Employees</h6>
               <Table hover size="sm">
                 <thead>
                   <tr>
-                    <th>User</th>
-                    <th>Role</th>
+                    <th>Employee</th>
+                    <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {tenant.users && tenant.users.length > 0 ? (
-                    tenant.users.map(user => (
+                  {tenant.employees && tenant.employees.length > 0 ? (
+                    tenant.employees.map(employee => (
                       <tr 
-                        key={user.id} 
-                        onClick={() => handleUserClick(user)}
+                        key={employee.id} 
+                        onClick={() => {
+                          if (employee.userId && employee.user) {
+                            const user: User = {
+                              id: employee.user.id,
+                              email: employee.user.email,
+                              fullName: employee.user.fullName || `${employee.firstName} ${employee.lastName}`,
+                              role: employee.user.role,
+                              isActive: employee.user.isActive
+                            };
+                            handleUserClick(user);
+                          } else {
+                            handleEmployeeClick(employee);
+                          }
+                        }}
                         style={{ cursor: 'pointer' }}
-                        className="user-row"
+                        className="employee-row"
                       >
                         <td>
                           <div>
-                            <strong>{user.fullName}</strong>
+                            <strong>{employee.firstName} {employee.lastName}</strong>
                             <br />
-                            <small className="text-muted">{user.email}</small>
+                            <small className="text-muted">
+                              {employee.email || 'No email'}
+                            </small>
                           </div>
                         </td>
                         <td>
-                          <Badge 
-                            bg={ROLES.find(r => r.value === user.role)?.badge || 'secondary'}
-                          >
-                            {user.role}
-                          </Badge>
+                          {employee.userId ? (
+                            <Badge bg={ROLES.find(r => r.value === employee.user?.role)?.badge || 'secondary'}>
+                              {employee.user?.role}
+                            </Badge>
+                          ) : (
+                            <Badge bg="warning">No Account</Badge>
+                          )}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={2} className="text-center text-muted">No users found</td>
+                      <td colSpan={2} className="text-center text-muted">No employees found</td>
                     </tr>
                   )}
                 </tbody>
@@ -414,8 +518,122 @@ const TenantSubscription: React.FC = () => {
         </Modal.Footer>
       </Modal>
 
+      {/* Create User from Employee Modal */}
+      <Modal show={showCreateUserModal} onHide={() => setShowCreateUserModal(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>
+            Create User Account: {selectedEmployee?.firstName} {selectedEmployee?.lastName}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {!generatedPassword ? (
+            <>
+              <Alert variant="info">
+                <strong>Creating User Account</strong>
+                <p className="mb-0 mt-2">
+                  You are about to create a user account for <strong>{selectedEmployee?.firstName} {selectedEmployee?.lastName}</strong>.
+                  This will allow them to log in to the system.
+                </p>
+              </Alert>
+
+              <Form.Group className="mb-3">
+                <Form.Label>Email Address</Form.Label>
+                <Form.Control 
+                  type="email" 
+                  value={selectedEmployee?.email || ''} 
+                  disabled 
+                />
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label>Assign Role</Form.Label>
+                <Form.Select 
+                  value={newUserRole} 
+                  onChange={(e) => setNewUserRole(e.target.value)}
+                >
+                  {ROLES.map(role => (
+                    <option key={role.value} value={role.value}>
+                      {role.label}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label>Temporary Password <span className="text-danger">*</span></Form.Label>
+                <div className="d-flex gap-2">
+                  <Form.Control 
+                    type="text" 
+                    value={tempPassword}
+                    onChange={(e) => setTempPassword(e.target.value)}
+                    placeholder="Enter temporary password (min 6 characters)"
+                  />
+                  <Button variant="outline-secondary" onClick={generateRandomPassword}>
+                    🎲 Generate
+                  </Button>
+                </div>
+                <Form.Text className="text-muted">
+                  Generate a secure temporary password and give it to the employee. They should change it on first login.
+                </Form.Text>
+              </Form.Group>
+
+              <Alert variant="warning">
+                <strong>⚠️ Important:</strong> Make sure to copy and securely share this password with the employee.
+              </Alert>
+            </>
+          ) : (
+            <>
+              <Alert variant="success">
+                <Alert.Heading>✅ User Account Created Successfully!</Alert.Heading>
+                <p>A user account has been created for <strong>{selectedEmployee?.firstName} {selectedEmployee?.lastName}</strong>.</p>
+              </Alert>
+
+              <Alert variant="warning">
+                <Alert.Heading>📋 Temporary Password</Alert.Heading>
+                <p className="mb-2">Please copy and securely share this password with the employee:</p>
+                <div className="bg-light p-3 rounded border">
+                  <h5 className="mb-0 font-monospace">{generatedPassword}</h5>
+                </div>
+                <p className="mt-2 mb-0 small">
+                  ⚠️ This password will not be shown again. The employee should change it on first login.
+                </p>
+              </Alert>
+
+              <div className="mt-3">
+                <p><strong>Email:</strong> {selectedEmployee?.email}</p>
+                <p><strong>Role:</strong> <Badge bg={ROLES.find(r => r.value === newUserRole)?.badge}>{newUserRole}</Badge></p>
+              </div>
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          {!generatedPassword ? (
+            <>
+              <Button variant="secondary" onClick={() => setShowCreateUserModal(false)}>
+                Cancel
+              </Button>
+              <Button 
+                variant="primary" 
+                onClick={handleCreateUser} 
+                disabled={saving || !tempPassword || tempPassword.length < 6}
+              >
+                {saving ? <Spinner animation="border" size="sm" /> : 'Create User Account'}
+              </Button>
+            </>
+          ) : (
+            <Button variant="success" onClick={() => {
+              setShowCreateUserModal(false);
+              setGeneratedPassword('');
+              setTempPassword('');
+            }}>
+              Done
+            </Button>
+          )}
+        </Modal.Footer>
+      </Modal>
+
       <style>{`
-        .user-row:hover {
+        .employee-row:hover, .user-row:hover {
           background-color: #f8f9fa;
         }
       `}</style>
