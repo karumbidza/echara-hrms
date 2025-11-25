@@ -55,6 +55,16 @@ export const createEmployee = async (req: AuthRequest, res: Response) => {
     const tenantId = req.user?.tenantId;
     const employeeData = req.body;
 
+    // Log incoming data for debugging
+    console.log('Creating employee with data:', { 
+      tenantId, 
+      hasFirstName: !!employeeData.firstName,
+      hasLastName: !!employeeData.lastName,
+      hasJobTitle: !!employeeData.jobTitle,
+      currency: employeeData.currency,
+      payFrequency: employeeData.payFrequency
+    });
+
     // Generate unique employee number by checking existing employees
     const existingCount = await prisma.employee.count({
       where: { tenantId }
@@ -77,12 +87,16 @@ export const createEmployee = async (req: AuthRequest, res: Response) => {
       attempts++;
     }
 
+    // Ensure contractCurrency is set (defaults to currency if not provided)
+    const dataToCreate = {
+      ...employeeData,
+      contractCurrency: employeeData.contractCurrency || employeeData.currency || 'USD',
+      tenantId,
+      employeeNumber
+    };
+
     const employee = await prisma.employee.create({
-      data: {
-        ...employeeData,
-        tenantId,
-        employeeNumber
-      },
+      data: dataToCreate,
       include: {
         department: true
       }
@@ -91,17 +105,30 @@ export const createEmployee = async (req: AuthRequest, res: Response) => {
     res.status(201).json({ employee, message: 'Employee created successfully' });
   } catch (error: any) {
     console.error('Create employee error:', error);
+    console.error('Error details:', {
+      code: error.code,
+      meta: error.meta,
+      message: error.message
+    });
     
     // Provide more specific error messages
     if (error.code === 'P2002') {
       return res.status(400).json({ 
-        error: 'Employee with this unique identifier already exists. Please try again.' 
+        error: 'Employee with this unique identifier already exists. Please try again.',
+        field: error.meta?.target 
+      });
+    }
+    
+    if (error.code === 'P2003') {
+      return res.status(400).json({ 
+        error: 'Invalid department or reference. Please check your selections.',
+        field: error.meta?.field_name
       });
     }
     
     res.status(500).json({ 
       error: 'Failed to create employee',
-      details: error.message 
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
