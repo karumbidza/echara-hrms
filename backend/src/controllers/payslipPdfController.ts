@@ -71,6 +71,16 @@ export const generatePayslipPDF = async (req: AuthRequest, res: Response) => {
       color: rgb(0, 0, 0),
     });
 
+    // Currency badge in header
+    const currencyBadgeText = `💰 ${payslip.currency}`;
+    page.drawText(currencyBadgeText, {
+      x: 480,
+      y: yPosition,
+      size: 16,
+      font: boldFont,
+      color: payslip.currency === 'USD' ? rgb(0, 0.5, 0) : rgb(0, 0.3, 0.7),
+    });
+
     yPosition -= 10;
     page.drawLine({
       start: { x: 50, y: yPosition },

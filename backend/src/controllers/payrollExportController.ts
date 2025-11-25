@@ -32,35 +32,73 @@ export const exportPAYE = async (req: AuthRequest, res: Response) => {
     }
 
     // Zimbabwe ZIMRA P.35 format
-    // Format: Employee Number, Name, ID Number, Gross, Taxable, PAYE, AIDS Levy, Total Tax
+    // Format: Employee Number, Name, ID Number, Gross, Taxable, PAYE, AIDS Levy, Total Tax, Currency
     const csvRows = [
-      ['Employee Number', 'Full Name', 'National ID', 'Gross Salary', 'Taxable Income', 'PAYE', 'AIDS Levy', 'Total Tax'].join(',')
+      ['Employee Number', 'Full Name', 'National ID', 'Gross Salary', 'Taxable Income', 'PAYE', 'AIDS Levy', 'Total Tax', 'Currency'].join(',')
     ];
 
-    payrollRun.payslips.forEach(payslip => {
-      const totalTax = payslip.paye + payslip.aidsLevy;
-      csvRows.push([
-        payslip.employee.employeeNumber,
-        `"${payslip.employee.firstName} ${payslip.employee.lastName}"`,
-        payslip.employee.nationalId || '',
-        payslip.grossSalary.toFixed(2),
-        payslip.taxableIncome.toFixed(2),
-        payslip.paye.toFixed(2),
-        payslip.aidsLevy.toFixed(2),
-        totalTax.toFixed(2)
-      ].join(','));
-    });
+    // Group by currency for better reporting
+    const usdPayslips = payrollRun.payslips.filter(p => p.currency === 'USD');
+    const zwlPayslips = payrollRun.payslips.filter(p => p.currency === 'ZWL');
 
-    // Summary row
-    const totals = payrollRun.payslips.reduce((acc, p) => ({
-      gross: acc.gross + p.grossSalary,
-      taxable: acc.taxable + p.taxableIncome,
-      paye: acc.paye + p.paye,
-      aids: acc.aids + p.aidsLevy
-    }), { gross: 0, taxable: 0, paye: 0, aids: 0 });
+    // USD Section
+    if (usdPayslips.length > 0) {
+      csvRows.push(['', '=== USD PAYMENTS ===', '', '', '', '', '', '', ''].join(','));
+      usdPayslips.forEach(payslip => {
+        const totalTax = payslip.paye + payslip.aidsLevy;
+        csvRows.push([
+          payslip.employee.employeeNumber,
+          `"${payslip.employee.firstName} ${payslip.employee.lastName}"`,
+          payslip.employee.nationalId || '',
+          payslip.grossSalary.toFixed(2),
+          payslip.taxableIncome.toFixed(2),
+          payslip.paye.toFixed(2),
+          payslip.aidsLevy.toFixed(2),
+          totalTax.toFixed(2),
+          'USD'
+        ].join(','));
+      });
 
-    csvRows.push(['', 'TOTAL', '', totals.gross.toFixed(2), totals.taxable.toFixed(2), 
-                   totals.paye.toFixed(2), totals.aids.toFixed(2), (totals.paye + totals.aids).toFixed(2)].join(','));
+      const usdTotals = usdPayslips.reduce((acc, p) => ({
+        gross: acc.gross + p.grossSalary,
+        taxable: acc.taxable + p.taxableIncome,
+        paye: acc.paye + p.paye,
+        aids: acc.aids + p.aidsLevy
+      }), { gross: 0, taxable: 0, paye: 0, aids: 0 });
+
+      csvRows.push(['', 'USD SUBTOTAL', '', usdTotals.gross.toFixed(2), usdTotals.taxable.toFixed(2), 
+                     usdTotals.paye.toFixed(2), usdTotals.aids.toFixed(2), (usdTotals.paye + usdTotals.aids).toFixed(2), 'USD'].join(','));
+      csvRows.push([''].join(','));
+    }
+
+    // ZWL Section
+    if (zwlPayslips.length > 0) {
+      csvRows.push(['', '=== ZWL PAYMENTS ===', '', '', '', '', '', '', ''].join(','));
+      zwlPayslips.forEach(payslip => {
+        const totalTax = payslip.paye + payslip.aidsLevy;
+        csvRows.push([
+          payslip.employee.employeeNumber,
+          `"${payslip.employee.firstName} ${payslip.employee.lastName}"`,
+          payslip.employee.nationalId || '',
+          payslip.grossSalary.toFixed(2),
+          payslip.taxableIncome.toFixed(2),
+          payslip.paye.toFixed(2),
+          payslip.aidsLevy.toFixed(2),
+          totalTax.toFixed(2),
+          'ZWL'
+        ].join(','));
+      });
+
+      const zwlTotals = zwlPayslips.reduce((acc, p) => ({
+        gross: acc.gross + p.grossSalary,
+        taxable: acc.taxable + p.taxableIncome,
+        paye: acc.paye + p.paye,
+        aids: acc.aids + p.aidsLevy
+      }), { gross: 0, taxable: 0, paye: 0, aids: 0 });
+
+      csvRows.push(['', 'ZWL SUBTOTAL', '', zwlTotals.gross.toFixed(2), zwlTotals.taxable.toFixed(2), 
+                     zwlTotals.paye.toFixed(2), zwlTotals.aids.toFixed(2), (zwlTotals.paye + zwlTotals.aids).toFixed(2), 'ZWL'].join(','));
+    }
 
     const csv = csvRows.join('\n');
     
@@ -96,33 +134,71 @@ export const exportNSSA = async (req: AuthRequest, res: Response) => {
     }
 
     // NSSA remittance format
-    // Format: Employee Number, Name, NSSA Number, Gross Salary, NSSA Employee (4.5%), NSSA Employer (4.5%), Total NSSA
+    // Format: Employee Number, Name, NSSA Number, Gross Salary, NSSA Employee (4.5%), NSSA Employer (4.5%), Total NSSA, Currency
     const csvRows = [
-      ['Employee Number', 'Full Name', 'NSSA Number', 'Gross Salary', 'NSSA Employee', 'NSSA Employer', 'Total NSSA'].join(',')
+      ['Employee Number', 'Full Name', 'NSSA Number', 'Gross Salary', 'NSSA Employee', 'NSSA Employer', 'Total NSSA', 'Currency'].join(',')
     ];
 
-    payrollRun.payslips.forEach(payslip => {
-      const totalNSSA = payslip.nssaEmployee + payslip.nssaEmployer;
-      csvRows.push([
-        payslip.employee.employeeNumber,
-        `"${payslip.employee.firstName} ${payslip.employee.lastName}"`,
-        payslip.employee.nssaNumber || '',
-        payslip.grossSalary.toFixed(2),
-        payslip.nssaEmployee.toFixed(2),
-        payslip.nssaEmployer.toFixed(2),
-        totalNSSA.toFixed(2)
-      ].join(','));
-    });
+    // Group by currency
+    const usdPayslips = payrollRun.payslips.filter(p => p.currency === 'USD');
+    const zwlPayslips = payrollRun.payslips.filter(p => p.currency === 'ZWL');
 
-    // Summary row
-    const totals = payrollRun.payslips.reduce((acc, p) => ({
-      gross: acc.gross + p.grossSalary,
-      employee: acc.employee + p.nssaEmployee,
-      employer: acc.employer + p.nssaEmployer
-    }), { gross: 0, employee: 0, employer: 0 });
+    // USD Section
+    if (usdPayslips.length > 0) {
+      csvRows.push(['', '=== USD PAYMENTS ===', '', '', '', '', '', ''].join(','));
+      usdPayslips.forEach(payslip => {
+        const totalNSSA = payslip.nssaEmployee + payslip.nssaEmployer;
+        csvRows.push([
+          payslip.employee.employeeNumber,
+          `"${payslip.employee.firstName} ${payslip.employee.lastName}"`,
+          payslip.employee.nssaNumber || '',
+          payslip.grossSalary.toFixed(2),
+          payslip.nssaEmployee.toFixed(2),
+          payslip.nssaEmployer.toFixed(2),
+          totalNSSA.toFixed(2),
+          'USD'
+        ].join(','));
+      });
 
-    csvRows.push(['', 'TOTAL', '', totals.gross.toFixed(2), totals.employee.toFixed(2), 
-                   totals.employer.toFixed(2), (totals.employee + totals.employer).toFixed(2)].join(','));
+      const usdTotals = usdPayslips.reduce((acc, p) => ({
+        gross: acc.gross + p.grossSalary,
+        employee: acc.employee + p.nssaEmployee,
+        employer: acc.employer + p.nssaEmployer
+      }), { gross: 0, employee: 0, employer: 0 });
+
+      csvRows.push(['', 'USD SUBTOTAL', '', usdTotals.gross.toFixed(2), usdTotals.employee.toFixed(2), 
+                     usdTotals.employer.toFixed(2), (usdTotals.employee + usdTotals.employer).toFixed(2), 'USD'].join(','));
+      csvRows.push(['', 'NSSA Caps: USD $1,000/month', '', '', '', '', '', ''].join(','));
+      csvRows.push([''].join(','));
+    }
+
+    // ZWL Section
+    if (zwlPayslips.length > 0) {
+      csvRows.push(['', '=== ZWL PAYMENTS ===', '', '', '', '', '', ''].join(','));
+      zwlPayslips.forEach(payslip => {
+        const totalNSSA = payslip.nssaEmployee + payslip.nssaEmployer;
+        csvRows.push([
+          payslip.employee.employeeNumber,
+          `"${payslip.employee.firstName} ${payslip.employee.lastName}"`,
+          payslip.employee.nssaNumber || '',
+          payslip.grossSalary.toFixed(2),
+          payslip.nssaEmployee.toFixed(2),
+          payslip.nssaEmployer.toFixed(2),
+          totalNSSA.toFixed(2),
+          'ZWL'
+        ].join(','));
+      });
+
+      const zwlTotals = zwlPayslips.reduce((acc, p) => ({
+        gross: acc.gross + p.grossSalary,
+        employee: acc.employee + p.nssaEmployee,
+        employer: acc.employer + p.nssaEmployer
+      }), { gross: 0, employee: 0, employer: 0 });
+
+      csvRows.push(['', 'ZWL SUBTOTAL', '', zwlTotals.gross.toFixed(2), zwlTotals.employee.toFixed(2), 
+                     zwlTotals.employer.toFixed(2), (zwlTotals.employee + zwlTotals.employer).toFixed(2), 'ZWL'].join(','));
+      csvRows.push(['', 'NSSA Caps: ZWL $30,000/month', '', '', '', '', '', ''].join(','));
+    }
 
     const csv = csvRows.join('\n');
     
@@ -158,27 +234,51 @@ export const exportBankPayments = async (req: AuthRequest, res: Response) => {
     }
 
     // Bank upload format (standard for Zimbabwe banks)
-    // Format: Employee Number, Full Name, Bank Name, Account Number, Branch Code, Net Pay, Currency
+    // Format: Employee Number, Full Name, Bank Name, Account Number, Net Pay, Currency
     const csvRows = [
       ['Employee Number', 'Full Name', 'Bank Name', 'Account Number', 'Net Pay', 'Currency'].join(',')
     ];
 
-    payrollRun.payslips.forEach(payslip => {
-      if (payslip.employee.bankAccount) {
+    // Group by currency for separate bank uploads
+    const usdPayslips = payrollRun.payslips.filter(p => p.currency === 'USD' && p.employee.bankAccount);
+    const zwlPayslips = payrollRun.payslips.filter(p => p.currency === 'ZWL' && p.employee.bankAccount);
+
+    // USD Section
+    if (usdPayslips.length > 0) {
+      csvRows.push(['', '=== USD PAYMENTS ===', '', '', '', ''].join(','));
+      usdPayslips.forEach(payslip => {
         csvRows.push([
           payslip.employee.employeeNumber,
           `"${payslip.employee.firstName} ${payslip.employee.lastName}"`,
           `"${payslip.employee.bankName || ''}"`,
           payslip.employee.bankAccount,
           payslip.netSalary.toFixed(2),
-          payslip.currency
+          'USD'
         ].join(','));
-      }
-    });
+      });
 
-    // Summary row
-    const totalNetPay = payrollRun.payslips.reduce((sum, p) => sum + p.netSalary, 0);
-    csvRows.push(['', 'TOTAL', '', '', totalNetPay.toFixed(2), ''].join(','));
+      const usdTotal = usdPayslips.reduce((sum, p) => sum + p.netSalary, 0);
+      csvRows.push(['', 'USD TOTAL', '', '', usdTotal.toFixed(2), 'USD'].join(','));
+      csvRows.push([''].join(','));
+    }
+
+    // ZWL Section
+    if (zwlPayslips.length > 0) {
+      csvRows.push(['', '=== ZWL PAYMENTS ===', '', '', '', ''].join(','));
+      zwlPayslips.forEach(payslip => {
+        csvRows.push([
+          payslip.employee.employeeNumber,
+          `"${payslip.employee.firstName} ${payslip.employee.lastName}"`,
+          `"${payslip.employee.bankName || ''}"`,
+          payslip.employee.bankAccount,
+          payslip.netSalary.toFixed(2),
+          'ZWL'
+        ].join(','));
+      });
+
+      const zwlTotal = zwlPayslips.reduce((sum, p) => sum + p.netSalary, 0);
+      csvRows.push(['', 'ZWL TOTAL', '', '', zwlTotal.toFixed(2), 'ZWL'].join(','));
+    }
 
     const csv = csvRows.join('\n');
     

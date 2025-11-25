@@ -187,6 +187,42 @@ export const runPayroll = async (req: AuthRequest, res: Response) => {
       }
     });
 
+    // Calculate currency breakdown
+    const payslips = await prisma.payslip.findMany({
+      where: { payrollRunId: payrollRun.id },
+      select: {
+        currency: true,
+        grossSalary: true,
+        netSalary: true,
+        paye: true,
+        aidsLevy: true,
+        nssaEmployee: true,
+        nssaEmployer: true
+      }
+    });
+
+    const currencyBreakdown = payslips.reduce((acc, ps) => {
+      if (!acc[ps.currency]) {
+        acc[ps.currency] = {
+          count: 0,
+          totalGross: 0,
+          totalNet: 0,
+          totalPAYE: 0,
+          totalAIDSLevy: 0,
+          totalNSSAEmployee: 0,
+          totalNSSAEmployer: 0
+        };
+      }
+      acc[ps.currency].count++;
+      acc[ps.currency].totalGross += ps.grossSalary;
+      acc[ps.currency].totalNet += ps.netSalary;
+      acc[ps.currency].totalPAYE += ps.paye;
+      acc[ps.currency].totalAIDSLevy += ps.aidsLevy;
+      acc[ps.currency].totalNSSAEmployee += ps.nssaEmployee;
+      acc[ps.currency].totalNSSAEmployer += ps.nssaEmployer;
+      return acc;
+    }, {} as Record<string, any>);
+
     res.json({
       message: 'Payroll processed successfully',
       payrollRun: {
@@ -196,7 +232,8 @@ export const runPayroll = async (req: AuthRequest, res: Response) => {
         employeesProcessed: employeeDataArray.length,
         totalGross,
         totalNet,
-        exchangeRate
+        exchangeRate,
+        currencyBreakdown
       }
     });
 

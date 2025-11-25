@@ -63,6 +63,7 @@ const Payroll: React.FC = () => {
   const [processing, setProcessing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [createdPayrollRunId, setCreatedPayrollRunId] = useState<string | null>(null);
+  const [currencyBreakdown, setCurrencyBreakdown] = useState<any>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [expandedEmployees, setExpandedEmployees] = useState<Set<string>>(new Set());
 
@@ -277,7 +278,10 @@ const Payroll: React.FC = () => {
       );
 
       const payrollRunId = response.data.payrollRun.id;
+      const breakdown = response.data.payrollRun.currencyBreakdown;
+      
       setCreatedPayrollRunId(payrollRunId);
+      setCurrencyBreakdown(breakdown);
       setMessage({
         type: 'success',
         text: `Payroll created successfully! ${response.data.payrollRun.employeesProcessed} employees processed. Status: DRAFT`
@@ -367,6 +371,84 @@ const Payroll: React.FC = () => {
             )}
           </div>
           <button type="button" className="btn-close" onClick={() => setMessage(null)}></button>
+        </div>
+      )}
+
+      {/* Currency Breakdown Summary */}
+      {currencyBreakdown && Object.keys(currencyBreakdown).length > 0 && (
+        <div className="row mb-4">
+          <div className="col-12">
+            <div className="card border-success">
+              <div className="card-header bg-success text-white">
+                <h5 className="mb-0">
+                  <i className="bi bi-currency-exchange me-2"></i>
+                  Payroll Summary by Currency
+                </h5>
+              </div>
+              <div className="card-body">
+                <div className="row">
+                  {Object.entries(currencyBreakdown).map(([currency, data]: [string, any]) => (
+                    <div key={currency} className="col-md-6 mb-3">
+                      <div className={`card h-100 ${currency === 'USD' ? 'border-primary' : 'border-info'}`}>
+                        <div className={`card-header ${currency === 'USD' ? 'bg-primary' : 'bg-info'} text-white`}>
+                          <h6 className="mb-0">
+                            <i className="bi bi-cash-stack me-2"></i>
+                            {currency} Payments
+                          </h6>
+                        </div>
+                        <div className="card-body">
+                          <div className="mb-2">
+                            <strong>Employees:</strong> {data.count}
+                          </div>
+                          <hr/>
+                          <div className="row">
+                            <div className="col-6">
+                              <small className="text-muted">Gross Total:</small>
+                              <div className="fw-bold">{currency} {data.totalGross.toFixed(2)}</div>
+                            </div>
+                            <div className="col-6">
+                              <small className="text-muted">Net Total:</small>
+                              <div className="fw-bold text-success">{currency} {data.totalNet.toFixed(2)}</div>
+                            </div>
+                          </div>
+                          <hr/>
+                          <div className="small">
+                            <div className="d-flex justify-content-between mb-1">
+                              <span className="text-muted">PAYE:</span>
+                              <span>{currency} {data.totalPAYE.toFixed(2)}</span>
+                            </div>
+                            <div className="d-flex justify-content-between mb-1">
+                              <span className="text-muted">AIDS Levy:</span>
+                              <span>{currency} {data.totalAIDSLevy.toFixed(2)}</span>
+                            </div>
+                            <div className="d-flex justify-content-between mb-1">
+                              <span className="text-muted">NSSA Employee:</span>
+                              <span>{currency} {data.totalNSSAEmployee.toFixed(2)}</span>
+                            </div>
+                            <div className="d-flex justify-content-between">
+                              <span className="text-muted">NSSA Employer:</span>
+                              <span>{currency} {data.totalNSSAEmployer.toFixed(2)}</span>
+                            </div>
+                          </div>
+                          <hr/>
+                          <div className="alert alert-light mb-0 small">
+                            <strong>Remittance Due:</strong> {currency} {(data.totalPAYE + data.totalAIDSLevy + data.totalNSSAEmployee + data.totalNSSAEmployer).toFixed(2)}
+                            <div className="text-muted" style={{fontSize: '0.85rem'}}>
+                              {currency === 'USD' ? 'NSSA Cap: $1,000/month' : 'NSSA Cap: ZWL $30,000/month'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="alert alert-info mb-0 mt-3">
+                  <i className="bi bi-info-circle me-2"></i>
+                  <strong>ZIMRA Remittance:</strong> PAYE and NSSA must be paid in the same currency as employee salaries by the 10th of the following month.
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
