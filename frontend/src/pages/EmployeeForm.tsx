@@ -39,6 +39,10 @@ const EmployeeForm: React.FC = () => {
     address: '',
     jobTitle: '',
     employmentType: 'FULL_TIME',
+    contractType: 'PERMANENT',
+    contractStartDate: '',
+    contractEndDate: '',
+    probationEndDate: '',
     payFrequency: 'MONTHLY',
     basicSalary: '',
     currency: 'USD',
@@ -412,6 +416,27 @@ const EmployeeForm: React.FC = () => {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
+                  <Form.Label>Contract Type *</Form.Label>
+                  <Form.Select
+                    name="contractType"
+                    value={formData.contractType}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="PERMANENT">Permanent</option>
+                    <option value="FIXED_TERM">Fixed Term / Period</option>
+                    <option value="PROBATION">Probation</option>
+                  </Form.Select>
+                  <Form.Text className="text-muted">
+                    Fixed term contracts require an end date
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col md={4}>
+                <Form.Group className="mb-3">
                   <Form.Label>Hire Date *</Form.Label>
                   <Form.Control
                     type="date"
@@ -420,6 +445,40 @@ const EmployeeForm: React.FC = () => {
                     onChange={handleChange}
                     required
                   />
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Contract Start Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    name="contractStartDate"
+                    value={formData.contractStartDate}
+                    onChange={handleChange}
+                  />
+                  <Form.Text className="text-muted">
+                    Usually same as hire date
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group className="mb-3">
+                  <Form.Label>
+                    {formData.contractType === 'FIXED_TERM' ? 'Contract End Date *' : 
+                     formData.contractType === 'PROBATION' ? 'Probation End Date' : 
+                     'Contract End Date'}
+                  </Form.Label>
+                  <Form.Control
+                    type="date"
+                    name={formData.contractType === 'PROBATION' ? 'probationEndDate' : 'contractEndDate'}
+                    value={formData.contractType === 'PROBATION' ? formData.probationEndDate : formData.contractEndDate}
+                    onChange={handleChange}
+                    required={formData.contractType === 'FIXED_TERM'}
+                  />
+                  <Form.Text className="text-muted">
+                    {formData.contractType === 'FIXED_TERM' && '⚠️ You\'ll be notified 2 weeks before expiry'}
+                    {formData.contractType === 'PROBATION' && 'Usually 3-6 months from hire date'}
+                  </Form.Text>
                 </Form.Group>
               </Col>
             </Row>

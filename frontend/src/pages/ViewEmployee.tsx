@@ -17,6 +17,15 @@ interface Employee {
   phone?: string;
   address?: string;
   employmentType: string;
+  contractType?: string;
+  contractStartDate?: string;
+  contractEndDate?: string;
+  probationEndDate?: string;
+  noticeGiven?: boolean;
+  noticeGivenDate?: string;
+  renewalDecision?: string;
+  renewalDecisionDate?: string;
+  renewalNotes?: string;
   jobTitle: string;
   payFrequency: string;
   basicSalary: number;
@@ -355,9 +364,64 @@ const ViewEmployee: React.FC = () => {
                     <Col sm={7}>{employee.employmentType.replace(/_/g, ' ')}</Col>
                   </Row>
                   <Row className="mb-2">
+                    <Col sm={5} className="text-muted">Contract Type:</Col>
+                    <Col sm={7}>
+                      <Badge bg={employee.contractType === 'PERMANENT' ? 'success' : employee.contractType === 'PROBATION' ? 'warning' : 'info'}>
+                        {employee.contractType?.replace(/_/g, ' ') || 'PERMANENT'}
+                      </Badge>
+                    </Col>
+                  </Row>
+                  <Row className="mb-2">
                     <Col sm={5} className="text-muted">Hire Date:</Col>
                     <Col sm={7}>{formatDate(employee.hireDate)}</Col>
                   </Row>
+                  {employee.contractStartDate && (
+                    <Row className="mb-2">
+                      <Col sm={5} className="text-muted">Contract Start:</Col>
+                      <Col sm={7}>{formatDate(employee.contractStartDate)}</Col>
+                    </Row>
+                  )}
+                  {employee.contractEndDate && (
+                    <Row className="mb-2">
+                      <Col sm={5} className="text-muted">Contract End:</Col>
+                      <Col sm={7}>
+                        <strong className={new Date(employee.contractEndDate) < new Date(Date.now() + 14*24*60*60*1000) ? 'text-danger' : ''}>
+                          {formatDate(employee.contractEndDate)}
+                        </strong>
+                        {new Date(employee.contractEndDate) < new Date(Date.now() + 14*24*60*60*1000) && 
+                         new Date(employee.contractEndDate) > new Date() && (
+                          <Badge bg="warning" className="ms-2">Expiring Soon</Badge>
+                        )}
+                        {new Date(employee.contractEndDate) < new Date() && (
+                          <Badge bg="danger" className="ms-2">Expired</Badge>
+                        )}
+                      </Col>
+                    </Row>
+                  )}
+                  {employee.probationEndDate && (
+                    <Row className="mb-2">
+                      <Col sm={5} className="text-muted">Probation End:</Col>
+                      <Col sm={7}>{formatDate(employee.probationEndDate)}</Col>
+                    </Row>
+                  )}
+                  {employee.noticeGiven && (
+                    <Row className="mb-2">
+                      <Col sm={5} className="text-muted">Notice Given:</Col>
+                      <Col sm={7}>
+                        <Badge bg="warning">Yes - {formatDate(employee.noticeGivenDate)}</Badge>
+                      </Col>
+                    </Row>
+                  )}
+                  {employee.renewalDecision && (
+                    <Row className="mb-2">
+                      <Col sm={5} className="text-muted">Renewal Decision:</Col>
+                      <Col sm={7}>
+                        <Badge bg={employee.renewalDecision === 'RENEW' ? 'success' : 'danger'}>
+                          {employee.renewalDecision === 'RENEW' ? 'Renewing' : 'Not Renewing'}
+                        </Badge>
+                      </Col>
+                    </Row>
+                  )}
                   <Row>
                     <Col sm={5} className="text-muted">Status:</Col>
                     <Col sm={7}>{getStatusBadge(employee.isActive ? 'ACTIVE' : 'INACTIVE')}</Col>

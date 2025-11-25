@@ -44,6 +44,7 @@ model Tenant {
   payments        Payment[]
   leavePolicy     LeavePolicy?
   leaveRequests   LeaveRequest[]
+  contractNotifications ContractNotification[]
 
   @@map("tenants")
 }
@@ -125,6 +126,15 @@ model Employee {
 
   // Employment details
   employmentType   EmploymentType @default(FULL_TIME)
+  contractType     ContractType   @default(PERMANENT)
+  contractStartDate DateTime?
+  contractEndDate   DateTime?     // Required for FIXED_TERM contracts
+  probationEndDate  DateTime?     // For probationary periods
+  noticeGiven       Boolean       @default(false) // Contract renewal notice given
+  noticeGivenDate   DateTime?     // When notice was given
+  renewalDecision   RenewalDecision? // RENEW or NOT_RENEW
+  renewalDecisionDate DateTime?   // When decision was made
+  renewalNotes      String?       // Notes about renewal decision
   jobTitle         String
   payFrequency     PayFrequency   @default(MONTHLY)
   basicSalary      Float          @default(0) // ENCRYPTED - sensitive financial
@@ -175,8 +185,46 @@ model Employee {
   salaryHistory   SalaryHistory[]
   payrollLines    PayrollLine[]
   taxCalculations TaxCalculation[]
+  contractNotifications ContractNotification[]
 
   @@map("employees")
+}
+
+model ContractNotification {
+  id          String   @id @default(uuid())
+  type        NotificationType @default(CONTRACT_EXPIRY)
+  
+  // Employee details
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  
+  // Notification details
+  contractEndDate DateTime
+  notificationDate DateTime // When notification should be sent
+  daysBeforeExpiry Int     // Usually 14 days
+  
+  // Status
+  sent        Boolean  @default(false)
+  sentAt      DateTime?
+  acknowledged Boolean @default(false)
+  acknowledgedAt DateTime?
+  acknowledgedBy String?
+  
+  // Decision tracking
+  actionTaken RenewalDecision?
+  actionTakenAt DateTime?
+  actionNotes String?
+  
+  // Metadata
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([tenantId, sent, notificationDate])
+  @@index([employeeId])
+  @@map("contract_notifications")
 }
 
 model PayrollRun {
@@ -802,5 +850,22 @@ enum QuoteStatus {
   SENT
   ACCEPTED
   REJECTED
+}
+
+enum ContractType {
+  PERMANENT
+  FIXED_TERM
+  PROBATION
+}
+
+enum RenewalDecision {
+  RENEW
+  NOT_RENEW
+}
+
+enum NotificationType {
+  CONTRACT_EXPIRY
+  PROBATION_END
+  DOCUMENT_EXPIRY
 }
 
