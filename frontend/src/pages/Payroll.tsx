@@ -855,6 +855,29 @@ const Payroll: React.FC = () => {
                                           </div>
                                         </div>
 
+                                        {/* Leave Information */}
+                                        <div className="alert alert-info border mt-3 mb-0">
+                                          <h6 className="text-muted small mb-2 fw-bold text-uppercase" style={{fontSize: '0.7rem'}}>
+                                            <i className="bi bi-calendar-check me-1"></i> Leave Balance
+                                          </h6>
+                                          <div className="d-flex justify-content-between align-items-center mb-1">
+                                            <span className="small">Accrued this month</span>
+                                            <span className="fw-semibold">1.83 days</span>
+                                          </div>
+                                          <div className="d-flex justify-content-between align-items-center mb-1">
+                                            <span className="small">Used YTD</span>
+                                            <span className="fw-semibold">0.0 days</span>
+                                          </div>
+                                          <div className="d-flex justify-content-between align-items-center pt-2 border-top">
+                                            <span className="small fw-bold">Balance Remaining</span>
+                                            <span className="fw-bold text-success">22.0 days</span>
+                                          </div>
+                                          <small className="text-muted d-block mt-2" style={{fontSize: '0.75rem'}}>
+                                            <i className="bi bi-info-circle me-1"></i>
+                                            Zimbabwe standard: 22 days/year (1.83/month)
+                                          </small>
+                                        </div>
+
                                         <div className="alert alert-light border mt-3 mb-0 small">
                                           <strong>Note:</strong> Estimates only. Final calculations include YTD adjustments.
                                         </div>

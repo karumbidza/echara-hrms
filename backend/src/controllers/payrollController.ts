@@ -145,7 +145,15 @@ export const runPayroll = async (req: AuthRequest, res: Response) => {
             ytdTaxable: result.ytdTaxable,
             ytdPaye: result.ytdPaye,
             ytdNssa: result.ytdNssa,
-            ytdNetPay: result.ytdNetPay
+            ytdNetPay: result.ytdNetPay,
+
+            // Leave information
+            leaveAccruedThisMonth: result.leaveAccruedThisMonth,
+            leaveUsedYTD: result.leaveUsedYTD,
+            leaveBalanceRemaining: result.leaveBalanceRemaining,
+
+            // PDF password (national ID without spaces)
+            pdfPassword: employee.nationalId?.replace(/[\s-]/g, '') || null
           }
         });
 
@@ -197,6 +205,59 @@ export const runPayroll = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: 'Failed to process payroll' });
   }
 };
+
+/**
+ * Calculate and update employee leave balance for the month
+ */
+async function processMonthlyLeaveAccrual(employeeId: string, periodEnd: Date) {
+  const year = periodEnd.getFullYear();
+  
+  // Get or create leave balance for the year
+  let leaveBalance = await prisma.leaveBalance.findUnique({
+    where: {
+      employeeId_year: {
+        employeeId,
+        year
+      }
+    }
+  });
+
+  if (!leaveBalance) {
+    // Create new balance for the year (Zimbabwe default: 22 annual days)
+    leaveBalance = await prisma.leaveBalance.create({
+      data: {
+        employeeId,
+        year,
+        annualTotal: 22, // Zimbabwe standard
+        annualUsed: 0,
+        annualBalance: 22,
+        annualCarryOver: 0,
+        sickUsed: 0,
+        maternityUsed: 0,
+        paternityUsed: 0
+      }
+    });
+  }
+
+  // Calculate monthly accrual (22 days / 12 months = 1.833...)
+  const monthlyAccrual = 22 / 12;
+
+  // Update annual balance with accrual
+  const newAnnualBalance = Number(leaveBalance.annualBalance) + monthlyAccrual;
+  
+  await prisma.leaveBalance.update({
+    where: { id: leaveBalance.id },
+    data: {
+      annualBalance: newAnnualBalance
+    }
+  });
+
+  return {
+    accruedThisMonth: monthlyAccrual,
+    usedYTD: Number(leaveBalance.annualUsed),
+    balanceRemaining: newAnnualBalance
+  };
+}
 
 /**
  * Calculate payroll for a single employee (Zimbabwean style)
@@ -255,6 +316,9 @@ async function calculateEmployeePayroll(input: {
   const totalDeductions = paye + aidsLevy + nssaEmployee + postTaxDeductions;
   const netSalary = grossSalary - totalDeductions;
 
+  // Step 7: Process monthly leave accrual
+  const leaveData = await processMonthlyLeaveAccrual(employee.id, input.periodEnd);
+
   // Step 8: Update YTD
   const ytdGross = (employee.ytdGross || 0) + grossSalary;
   const ytdTaxable = (employee.ytdTaxable || 0) + taxableIncome;
@@ -281,7 +345,10 @@ async function calculateEmployeePayroll(input: {
     ytdTaxable,
     ytdPaye,
     ytdNssa,
-    ytdNetPay
+    ytdNetPay,
+    leaveAccruedThisMonth: leaveData.accruedThisMonth,
+    leaveUsedYTD: leaveData.usedYTD,
+    leaveBalanceRemaining: leaveData.balanceRemaining
   };
 }
 

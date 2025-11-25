@@ -255,9 +255,15 @@ model Payslip {
   ytdNssa    Float @default(0)
   ytdNetPay  Float @default(0)
 
+  // Leave information (snapshot at time of payslip)
+  leaveAccruedThisMonth  Float @default(0) // Monthly accrual (e.g., 1.83 days)
+  leaveUsedYTD           Float @default(0) // Total leave days used this year
+  leaveBalanceRemaining  Float @default(0) // Remaining annual leave balance
+
   // Metadata
   details      Json? // Detailed breakdown
   pdfPath      String? // Path to generated PDF
+  pdfPassword  String? // Password for PDF (national ID without spaces)
   isDelivered  Boolean  @default(false)
   isAdjustment Boolean  @default(false) // Retroactive adjustment flag
   createdAt    DateTime @default(now())
