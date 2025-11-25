@@ -156,7 +156,7 @@ const EmployeeForm: React.FC = () => {
         defaultOtherAllowances: parseFloat(formData.defaultOtherAllowances) || 0,
         defaultPensionContribution: parseFloat(formData.defaultPensionContribution) || 0,
         defaultMedicalAid: parseFloat(formData.defaultMedicalAid) || 0,
-        defaultMonthlyLeaveRate: parseFloat(formData.defaultMonthlyLeaveRate) || 0,
+        defaultMonthlyLeaveRate: formData.defaultMonthlyLeaveRate ? parseFloat(formData.defaultMonthlyLeaveRate) : 0,
         dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString() : null,
         hireDate: formData.hireDate ? new Date(formData.hireDate).toISOString() : null,
         departmentId: formData.departmentId || null
