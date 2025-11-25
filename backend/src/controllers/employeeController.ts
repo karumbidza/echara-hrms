@@ -102,6 +102,50 @@ export const createEmployee = async (req: AuthRequest, res: Response) => {
       }
     });
 
+    // Auto-create leave balance for the new employee
+    try {
+      const currentYear = new Date().getFullYear();
+      
+      // Get or create leave policy for tenant
+      let policy = await prisma.leavePolicy.findUnique({
+        where: { tenantId }
+      });
+
+      if (!policy) {
+        // Create default leave policy
+        policy = await prisma.leavePolicy.create({
+          data: {
+            tenantId,
+            annualLeaveDays: 22,
+            sickLeaveDaysBeforeCert: 2,
+            maternityLeaveDays: 98,
+            paternityLeaveDays: 7,
+            carryOverDays: 5
+          }
+        });
+      }
+
+      // Create leave balance for the employee
+      await prisma.leaveBalance.create({
+        data: {
+          employeeId: employee.id,
+          year: currentYear,
+          annualTotal: policy.annualLeaveDays,
+          annualUsed: 0,
+          annualBalance: policy.annualLeaveDays,
+          annualCarryOver: 0,
+          sickUsed: 0,
+          maternityUsed: 0,
+          paternityUsed: 0
+        }
+      });
+
+      console.log('✅ Leave balance created for employee:', employee.employeeNumber);
+    } catch (leaveError) {
+      console.error('Failed to create leave balance:', leaveError);
+      // Don't fail employee creation if leave balance fails
+    }
+
     res.status(201).json({ employee, message: 'Employee created successfully' });
   } catch (error: any) {
     console.error('Create employee error:', error);
