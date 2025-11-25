@@ -226,9 +226,17 @@ const TenantDetails: React.FC = () => {
             {tenant.slug} • Registered {new Date(tenant.createdAt).toLocaleDateString()}
           </p>
         </div>
-        <span className={`badge ${getStatusBadge(tenant.subscriptionStatus)} fs-6`}>
-          {tenant.subscriptionStatus}
-        </span>
+        <div>
+          <button 
+            className="btn btn-primary me-2"
+            onClick={() => navigate(`/super-admin/tenants/${tenant.id}/subscription`)}
+          >
+            ⚙️ Manage Subscription & Features
+          </button>
+          <span className={`badge ${getStatusBadge(tenant.subscriptionStatus)} fs-6`}>
+            {tenant.subscriptionStatus}
+          </span>
+        </div>
       </div>
 
       {/* Alert */}

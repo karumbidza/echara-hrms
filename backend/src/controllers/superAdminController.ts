@@ -103,6 +103,14 @@ export const getTenantDetails = async (req: AuthRequest, res: Response) => {
     const tenant = await prisma.tenant.findUnique({
       where: { id },
       include: {
+        _count: {
+          select: {
+            users: true,
+            employees: true,
+            payrollRuns: true,
+            departments: true
+          }
+        },
         users: {
           select: {
             id: true,
@@ -125,7 +133,16 @@ export const getTenantDetails = async (req: AuthRequest, res: Response) => {
         },
         subscriptions: {
           include: {
-            plan: true,
+            plan: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                features: true,
+                maxEmployees: true,
+                maxUsers: true
+              }
+            },
             payments: true
           },
           orderBy: { createdAt: 'desc' }
@@ -313,10 +330,7 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
       where: { id },
       data: { 
         status,
-        method,
-        verifiedAt: status === 'PAID' ? new Date() : null,
-        verifiedBy: req.user.id,
-        notes
+        method
       }
     });
 
@@ -337,5 +351,100 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error('Error verifying payment:', error);
     res.status(500).json({ error: 'Failed to verify payment' });
+  }
+};
+
+// Update tenant features
+export const updateTenantFeatures = async (req: AuthRequest, res: Response) => {
+  try {
+    if (req.user?.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Access denied. Super admin only.' });
+    }
+
+    const { id } = req.params;
+    const { features } = req.body;
+
+    if (!Array.isArray(features)) {
+      return res.status(400).json({ error: 'Features must be an array' });
+    }
+
+    // Get active subscription
+    const subscription = await prisma.subscription.findFirst({
+      where: {
+        tenantId: id,
+        status: 'ACTIVE'
+      },
+      include: {
+        plan: true
+      }
+    });
+
+    if (!subscription) {
+      return res.status(404).json({ error: 'No active subscription found for this tenant' });
+    }
+
+    // Update plan features
+    const updatedPlan = await prisma.plan.update({
+      where: { id: subscription.planId },
+      data: {
+        features: features
+      }
+    });
+
+    res.json({ 
+      message: 'Features updated successfully', 
+      features: updatedPlan.features 
+    });
+  } catch (error) {
+    console.error('Error updating tenant features:', error);
+    res.status(500).json({ error: 'Failed to update tenant features' });
+  }
+};
+
+// Update user role
+export const updateUserRole = async (req: AuthRequest, res: Response) => {
+  try {
+    if (req.user?.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Access denied. Super admin only.' });
+    }
+
+    const { id: tenantId, userId } = req.params;
+    const { role } = req.body;
+
+    const validRoles = ['ADMIN', 'MANAGER', 'GENERAL_MANAGER', 'FINANCE_MANAGER', 'EMPLOYEE'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
+
+    // Verify user belongs to tenant
+    const user = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        tenantId: tenantId
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found or does not belong to this tenant' });
+    }
+
+    // Update user role
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { role }
+    });
+
+    res.json({ 
+      message: 'User role updated successfully', 
+      user: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        fullName: updatedUser.fullName,
+        role: updatedUser.role
+      }
+    });
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    res.status(500).json({ error: 'Failed to update user role' });
   }
 };

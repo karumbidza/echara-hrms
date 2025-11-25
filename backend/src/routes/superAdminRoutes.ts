@@ -8,7 +8,9 @@ import {
   getPlans,
   updatePlan,
   getRecentActivities,
-  verifyPayment
+  verifyPayment,
+  updateTenantFeatures,
+  updateUserRole
 } from '../controllers/superAdminController';
 import { authenticateToken } from '../middleware/auth';
 
@@ -22,6 +24,8 @@ router.get('/tenants', getAllTenants);
 router.get('/tenants/:id', getTenantDetails);
 router.put('/tenants/:id/status', updateTenantStatus);
 router.put('/tenants/:id/extend-trial', extendTrial);
+router.put('/tenants/:id/features', updateTenantFeatures);
+router.put('/tenants/:id/users/:userId/role', updateUserRole);
 
 // Platform stats
 router.get('/stats', getPlatformStats);

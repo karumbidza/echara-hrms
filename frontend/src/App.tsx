@@ -20,6 +20,7 @@ import PlatformSettings from './pages/PlatformSettings';
 import SuperAdminPlans from './pages/SuperAdminPlans';
 import SuperAdminRevenue from './pages/SuperAdminRevenue';
 import TenantDetails from './pages/TenantDetails';
+import TenantSubscription from './pages/TenantSubscription';
 import RequestQuote from './pages/RequestQuote';
 import QuoteRequests from './pages/QuoteRequests';
 import Leave from './pages/Leave';
@@ -153,6 +154,14 @@ function AppContent() {
               element={
                 <SuperAdminRoute>
                   <TenantDetails />
+                </SuperAdminRoute>
+              } 
+            />
+            <Route 
+              path="/super-admin/tenants/:id/subscription" 
+              element={
+                <SuperAdminRoute>
+                  <TenantSubscription />
                 </SuperAdminRoute>
               } 
             />
