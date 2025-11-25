@@ -150,6 +150,13 @@ const EmployeeForm: React.FC = () => {
       const payload = {
         ...formData,
         basicSalary: parseFloat(formData.basicSalary) || 0,
+        defaultHousingAllowance: parseFloat(formData.defaultHousingAllowance) || 0,
+        defaultTransportAllowance: parseFloat(formData.defaultTransportAllowance) || 0,
+        defaultMealAllowance: parseFloat(formData.defaultMealAllowance) || 0,
+        defaultOtherAllowances: parseFloat(formData.defaultOtherAllowances) || 0,
+        defaultPensionContribution: parseFloat(formData.defaultPensionContribution) || 0,
+        defaultMedicalAid: parseFloat(formData.defaultMedicalAid) || 0,
+        defaultMonthlyLeaveRate: parseFloat(formData.defaultMonthlyLeaveRate) || 0,
         dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString() : null,
         hireDate: formData.hireDate ? new Date(formData.hireDate).toISOString() : null,
         departmentId: formData.departmentId || null
