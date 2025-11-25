@@ -1,11 +1,8 @@
 {
-  "version": 2,
-  "name": "echara-hrms-frontend",
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/build",
+  "buildCommand": "npm run build",
+  "outputDirectory": "build",
+  "installCommand": "npm install",
   "framework": null,
-  "installCommand": "cd frontend && npm install",
-  "devCommand": "cd frontend && npm start",
   "routes": [
     {
       "src": "/static/(.*)",
