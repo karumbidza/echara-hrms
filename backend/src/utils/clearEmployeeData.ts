@@ -21,8 +21,11 @@ async function clearEmployeeData() {
     console.log('Deleting timesheets...');
     await prisma.timesheet.deleteMany({});
     
-    console.log('Deleting leaves...');
-    await prisma.leave.deleteMany({});
+    console.log('Deleting leave requests...');
+    await prisma.leaveRequest.deleteMany({});
+    
+    console.log('Deleting leave balances...');
+    await prisma.leaveBalance.deleteMany({});
     
     // 2. Delete employees
     console.log('Deleting employees...');
