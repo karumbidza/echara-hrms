@@ -185,9 +185,12 @@ export const updateEmployee = async (req: AuthRequest, res: Response) => {
     const tenantId = req.user?.tenantId;
     const employeeData = req.body;
 
+    // Sanitize data - remove fields that shouldn't be updated
+    const { employeeNumber, createdAt, updatedAt, ...updateData } = employeeData;
+
     const employee = await prisma.employee.updateMany({
       where: { id, tenantId },
-      data: employeeData
+      data: updateData
     });
 
     if (employee.count === 0) {
@@ -200,9 +203,18 @@ export const updateEmployee = async (req: AuthRequest, res: Response) => {
     });
 
     res.json({ employee: updatedEmployee, message: 'Employee updated successfully' });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Update employee error:', error);
-    res.status(500).json({ error: 'Failed to update employee' });
+    console.error('Error details:', {
+      code: error.code,
+      meta: error.meta,
+      message: error.message
+    });
+    res.status(500).json({ 
+      error: 'Failed to update employee',
+      details: error.message,
+      code: error.code
+    });
   }
 };
 
