@@ -101,6 +101,7 @@ const TenantSubscription: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
+      console.log('Tenant data received:', response.data);
       setTenant(response.data);
       
       // Set initial selected features from active subscription
@@ -111,6 +112,7 @@ const TenantSubscription: React.FC = () => {
         }
       }
     } catch (err: any) {
+      console.error('Error fetching tenant:', err);
       setError(err.response?.data?.error || 'Failed to fetch tenant details');
     } finally {
       setLoading(false);
@@ -184,10 +186,30 @@ const TenantSubscription: React.FC = () => {
     );
   }
 
+  if (error) {
+    return (
+      <Container className="mt-4">
+        <Alert variant="danger">
+          <Alert.Heading>Error Loading Tenant</Alert.Heading>
+          <p>{error}</p>
+          <Button variant="outline-danger" onClick={() => navigate('/super-admin')}>
+            ← Back to Dashboard
+          </Button>
+        </Alert>
+      </Container>
+    );
+  }
+
   if (!tenant) {
     return (
       <Container className="mt-4">
-        <Alert variant="danger">Tenant not found</Alert>
+        <Alert variant="warning">
+          <Alert.Heading>Tenant Not Found</Alert.Heading>
+          <p>The requested tenant could not be found.</p>
+          <Button variant="outline-secondary" onClick={() => navigate('/super-admin')}>
+            ← Back to Dashboard
+          </Button>
+        </Alert>
       </Container>
     );
   }
@@ -203,7 +225,7 @@ const TenantSubscription: React.FC = () => {
           </Button>
           <h2 className="mt-3">Manage Subscription: {tenant.name}</h2>
           <p className="text-muted">
-            {tenant._count.employees} Employees · {tenant._count.users} Users · Status: 
+            {tenant._count?.employees || 0} Employees · {tenant._count?.users || 0} Users · Status: 
             <Badge bg={tenant.subscriptionStatus === 'ACTIVE' ? 'success' : 'warning'} className="ms-2">
               {tenant.subscriptionStatus}
             </Badge>
