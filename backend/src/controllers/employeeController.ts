@@ -55,11 +55,33 @@ export const createEmployee = async (req: AuthRequest, res: Response) => {
     const tenantId = req.user?.tenantId;
     const employeeData = req.body;
 
+    // Generate unique employee number by checking existing employees
+    const existingCount = await prisma.employee.count({
+      where: { tenantId }
+    });
+    
+    // Generate employee number with tenant prefix and sequential number
+    let employeeNumber = `EMP${String(existingCount + 1).padStart(4, '0')}`;
+    
+    // Ensure uniqueness by checking if it exists and incrementing if needed
+    let attempts = 0;
+    while (attempts < 10) {
+      const existing = await prisma.employee.findUnique({
+        where: { employeeNumber }
+      });
+      
+      if (!existing) break;
+      
+      // If exists, add random suffix
+      employeeNumber = `EMP${String(existingCount + 1).padStart(4, '0')}-${Math.floor(Math.random() * 1000)}`;
+      attempts++;
+    }
+
     const employee = await prisma.employee.create({
       data: {
         ...employeeData,
         tenantId,
-        employeeNumber: `EMP${Date.now()}`
+        employeeNumber
       },
       include: {
         department: true
@@ -67,9 +89,20 @@ export const createEmployee = async (req: AuthRequest, res: Response) => {
     });
 
     res.status(201).json({ employee, message: 'Employee created successfully' });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create employee error:', error);
-    res.status(500).json({ error: 'Failed to create employee' });
+    
+    // Provide more specific error messages
+    if (error.code === 'P2002') {
+      return res.status(400).json({ 
+        error: 'Employee with this unique identifier already exists. Please try again.' 
+      });
+    }
+    
+    res.status(500).json({ 
+      error: 'Failed to create employee',
+      details: error.message 
+    });
   }
 };
 
