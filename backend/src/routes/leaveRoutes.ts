@@ -41,6 +41,7 @@ router.post('/employee/:employeeId/generate-token', requireRole(['ADMIN']), gene
 router.post('/requests', submitLeaveRequest);
 router.get('/requests', getLeaveRequests);
 router.get('/requests/:id', getLeaveRequest);
+router.get('/employee/:employeeId/requests', getLeaveRequests); // Get leave requests for specific employee
 
 // Approval routes (Admin/Manager only)
 router.put('/requests/:id/approve', requireRole(['ADMIN', 'MANAGER']), approveLeaveRequest);

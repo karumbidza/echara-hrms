@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Employees from './pages/Employees';
 import EmployeeForm from './pages/EmployeeForm';
+import ViewEmployee from './pages/ViewEmployee';
 import Departments from './pages/Departments';
 import Payroll from './pages/Payroll';
 import PayrollRuns from './pages/PayrollRuns';
@@ -192,6 +193,14 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <EmployeeForm />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/employees/:id" 
+              element={
+                <ProtectedRoute>
+                  <ViewEmployee />
                 </ProtectedRoute>
               } 
             />
