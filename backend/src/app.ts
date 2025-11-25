@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import path from 'path';
 import { PrismaClient } from '@prisma/client';
 
 // Import routes
@@ -57,6 +58,9 @@ app.use(cors({
 app.use(helmet());
 app.use(morgan('combined'));
 app.use(express.json());
+
+// Serve uploaded files statically
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
 app.use('/api/auth', authRoutes);

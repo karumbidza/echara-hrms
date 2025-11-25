@@ -112,6 +112,10 @@ const EmployeeForm: React.FC = () => {
         address: employee.address || '',
         jobTitle: employee.jobTitle || '',
         employmentType: employee.employmentType || 'FULL_TIME',
+        contractType: employee.contractType || 'PERMANENT',
+        contractStartDate: employee.contractStartDate ? employee.contractStartDate.split('T')[0] : '',
+        contractEndDate: employee.contractEndDate ? employee.contractEndDate.split('T')[0] : '',
+        probationEndDate: employee.probationEndDate ? employee.probationEndDate.split('T')[0] : '',
         payFrequency: employee.payFrequency || 'MONTHLY',
         basicSalary: employee.basicSalary?.toString() || '',
         currency: employee.currency || 'USD',
@@ -152,7 +156,29 @@ const EmployeeForm: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       
-      // Parse all numeric fields
+      // Use FormData for file uploads
+      const formDataToSend = new FormData();
+      
+      // Add all text fields
+      Object.keys(formData).forEach(key => {
+        const value = formData[key as keyof typeof formData];
+        if (value !== null && value !== undefined && value !== '') {
+          formDataToSend.append(key, value.toString());
+        }
+      });
+      
+      // Add files if present
+      if (photoFile) {
+        formDataToSend.append('photo', photoFile);
+      }
+      if (nationalIdFile) {
+        formDataToSend.append('nationalId', nationalIdFile);
+      }
+      if (driversLicenseFile) {
+        formDataToSend.append('driversLicense', driversLicenseFile);
+      }
+      
+      // Parse numeric fields and override
       const numericFields = {
         basicSalary: parseFloat(formData.basicSalary.toString()) || 0,
         defaultHousingAllowance: parseFloat(formData.defaultHousingAllowance.toString()) || 0,
@@ -164,22 +190,41 @@ const EmployeeForm: React.FC = () => {
         defaultMonthlyLeaveRate: parseFloat(formData.defaultMonthlyLeaveRate.toString()) || 0
       };
       
-      const payload = {
-        ...formData,
-        ...numericFields,
-        dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString() : null,
-        hireDate: formData.hireDate ? new Date(formData.hireDate).toISOString() : null,
-        departmentId: formData.departmentId || null
-      };
+      Object.keys(numericFields).forEach(key => {
+        formDataToSend.set(key, numericFields[key as keyof typeof numericFields].toString());
+      });
+      
+      // Convert dates to ISO strings
+      if (formData.dateOfBirth) {
+        formDataToSend.set('dateOfBirth', new Date(formData.dateOfBirth).toISOString());
+      }
+      if (formData.hireDate) {
+        formDataToSend.set('hireDate', new Date(formData.hireDate).toISOString());
+      }
+      if (formData.contractStartDate) {
+        formDataToSend.set('contractStartDate', new Date(formData.contractStartDate).toISOString());
+      }
+      if (formData.contractEndDate) {
+        formDataToSend.set('contractEndDate', new Date(formData.contractEndDate).toISOString());
+      }
+      if (formData.probationEndDate) {
+        formDataToSend.set('probationEndDate', new Date(formData.probationEndDate).toISOString());
+      }
 
       if (isEditMode) {
-        await axios.put(`${API_URL}/employees/${id}`, payload, {
-          headers: { Authorization: `Bearer ${token}` }
+        await axios.put(`${API_URL}/employees/${id}`, formDataToSend, {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
         });
         setSuccess('Employee updated successfully!');
       } else {
-        await axios.post(`${API_URL}/employees`, payload, {
-          headers: { Authorization: `Bearer ${token}` }
+        await axios.post(`${API_URL}/employees`, formDataToSend, {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
         });
         setSuccess('Employee created successfully!');
       }

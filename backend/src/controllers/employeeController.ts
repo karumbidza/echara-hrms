@@ -54,6 +54,7 @@ export const createEmployee = async (req: AuthRequest, res: Response) => {
   try {
     const tenantId = req.user?.tenantId;
     const employeeData = req.body;
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
     // Log incoming data for debugging
     console.log('Creating employee with data:', { 
@@ -62,7 +63,9 @@ export const createEmployee = async (req: AuthRequest, res: Response) => {
       hasLastName: !!employeeData.lastName,
       hasJobTitle: !!employeeData.jobTitle,
       currency: employeeData.currency,
-      payFrequency: employeeData.payFrequency
+      payFrequency: employeeData.payFrequency,
+      hasFiles: !!files,
+      fileFields: files ? Object.keys(files) : []
     });
 
     // Generate unique employee number by checking existing employees
@@ -87,9 +90,24 @@ export const createEmployee = async (req: AuthRequest, res: Response) => {
       attempts++;
     }
 
+    // Handle file uploads
+    const filePaths: any = {};
+    if (files) {
+      if (files.photo && files.photo[0]) {
+        filePaths.photoPath = `/uploads/${files.photo[0].filename}`;
+      }
+      if (files.nationalId && files.nationalId[0]) {
+        filePaths.nationalIdPath = `/uploads/${files.nationalId[0].filename}`;
+      }
+      if (files.driversLicense && files.driversLicense[0]) {
+        filePaths.driversLicensePath = `/uploads/${files.driversLicense[0].filename}`;
+      }
+    }
+
     // Ensure contractCurrency is set (defaults to currency if not provided)
     const dataToCreate = {
       ...employeeData,
+      ...filePaths,
       contractCurrency: employeeData.contractCurrency || employeeData.currency || 'USD',
       tenantId,
       employeeNumber
@@ -184,13 +202,31 @@ export const updateEmployee = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const tenantId = req.user?.tenantId;
     const employeeData = req.body;
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+    // Handle file uploads
+    const filePaths: any = {};
+    if (files) {
+      if (files.photo && files.photo[0]) {
+        filePaths.photoPath = `/uploads/${files.photo[0].filename}`;
+      }
+      if (files.nationalId && files.nationalId[0]) {
+        filePaths.nationalIdPath = `/uploads/${files.nationalId[0].filename}`;
+      }
+      if (files.driversLicense && files.driversLicense[0]) {
+        filePaths.driversLicensePath = `/uploads/${files.driversLicense[0].filename}`;
+      }
+    }
 
     // Sanitize data - remove fields that shouldn't be updated
     const { employeeNumber, createdAt, updatedAt, ...updateData } = employeeData;
 
     const employee = await prisma.employee.updateMany({
       where: { id, tenantId },
-      data: updateData
+      data: {
+        ...updateData,
+        ...filePaths
+      }
     });
 
     if (employee.count === 0) {
