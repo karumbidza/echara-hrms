@@ -13,7 +13,9 @@ import {
   getPendingCount,
   generateLeaveToken,
   getLeaveRequestByToken,
-  submitLeaveRequestByToken
+  submitLeaveRequestByToken,
+  recalculateEmployeeLeave,
+  recalculateAllLeaves
 } from '../controllers/leaveController';
 import { authenticateToken, requireRole } from '../middleware/auth';
 
@@ -52,5 +54,9 @@ router.delete('/requests/:id', cancelLeaveRequest);
 
 // Pending count for managers
 router.get('/pending/count', getPendingCount);
+
+// Recalculate leave balances (Admin only)
+router.post('/balance/:employeeId/recalculate', requireRole(['ADMIN']), recalculateEmployeeLeave);
+router.post('/balance/recalculate-all', requireRole(['ADMIN']), recalculateAllLeaves);
 
 export default router;

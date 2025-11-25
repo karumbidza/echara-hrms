@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { PrismaClient, LeaveStatus, Prisma } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
 import crypto from 'crypto';
+import { recalculateLeaveBalance, recalculateAllLeaveBalances } from '../utils/leaveCalculations';
 
 const prisma = new PrismaClient();
 
@@ -889,3 +890,44 @@ function calculateWorkingDays(startDate: Date, endDate: Date, halfDay: boolean =
   
   return halfDay ? count - 0.5 : count;
 }
+
+/**
+ * Recalculate leave balance for a specific employee (Admin only)
+ */
+export const recalculateEmployeeLeave = async (req: AuthRequest, res: Response) => {
+  try {
+    const { employeeId } = req.params;
+    const tenantId = req.user?.tenantId;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID required' });
+    }
+
+    await recalculateLeaveBalance(employeeId, tenantId);
+
+    res.json({ message: 'Leave balance recalculated successfully' });
+  } catch (error) {
+    console.error('Recalculate employee leave error:', error);
+    res.status(500).json({ error: 'Failed to recalculate leave balance' });
+  }
+};
+
+/**
+ * Bulk recalculate leave balances for all employees (Admin only)
+ */
+export const recalculateAllLeaves = async (req: AuthRequest, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID required' });
+    }
+
+    await recalculateAllLeaveBalances(tenantId);
+
+    res.json({ message: 'All leave balances recalculated successfully' });
+  } catch (error) {
+    console.error('Bulk recalculate leave error:', error);
+    res.status(500).json({ error: 'Failed to recalculate leave balances' });
+  }
+};

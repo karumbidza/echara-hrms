@@ -123,6 +123,8 @@ export const createEmployee = async (req: AuthRequest, res: Response) => {
     // Auto-create leave balance for the new employee
     try {
       const currentYear = new Date().getFullYear();
+      const currentDate = new Date();
+      const hireDate = employee.hireDate ? new Date(employee.hireDate) : currentDate;
       
       // Get or create leave policy for tenant
       let policy = await prisma.leavePolicy.findUnique({
@@ -143,6 +145,36 @@ export const createEmployee = async (req: AuthRequest, res: Response) => {
         });
       }
 
+      // Calculate leave accrued based on hire date
+      // Leave accumulates at 1.83 days per month (22 days / 12 months)
+      const monthlyAccrual = policy.annualLeaveDays / 12;
+      
+      let accruedLeave = policy.annualLeaveDays;
+      let startDate = hireDate;
+      
+      // If hired this year, calculate prorated leave
+      if (hireDate.getFullYear() === currentYear) {
+        const monthsWorked = Math.max(0, 
+          (currentDate.getFullYear() - hireDate.getFullYear()) * 12 + 
+          (currentDate.getMonth() - hireDate.getMonth())
+        );
+        
+        // Add partial month if more than 15 days into current month
+        const daysIntoMonth = currentDate.getDate();
+        const additionalMonthFraction = daysIntoMonth >= 15 ? 1 : 0;
+        
+        accruedLeave = (monthsWorked + additionalMonthFraction) * monthlyAccrual;
+        
+        console.log(`📊 Leave calculation for ${employee.firstName}:`, {
+          hireDate: hireDate.toISOString().split('T')[0],
+          currentDate: currentDate.toISOString().split('T')[0],
+          monthsWorked,
+          additionalMonthFraction,
+          monthlyAccrual: monthlyAccrual.toFixed(2),
+          accruedLeave: accruedLeave.toFixed(2)
+        });
+      }
+
       // Create leave balance for the employee
       await prisma.leaveBalance.create({
         data: {
@@ -150,7 +182,7 @@ export const createEmployee = async (req: AuthRequest, res: Response) => {
           year: currentYear,
           annualTotal: policy.annualLeaveDays,
           annualUsed: 0,
-          annualBalance: policy.annualLeaveDays,
+          annualBalance: Math.round(accruedLeave * 10) / 10, // Round to 1 decimal
           annualCarryOver: 0,
           sickUsed: 0,
           maternityUsed: 0,
@@ -158,7 +190,7 @@ export const createEmployee = async (req: AuthRequest, res: Response) => {
         }
       });
 
-      console.log('✅ Leave balance created for employee:', employee.employeeNumber);
+      console.log('✅ Leave balance created for employee:', employee.employeeNumber, 'with', accruedLeave.toFixed(1), 'days');
     } catch (leaveError) {
       console.error('Failed to create leave balance:', leaveError);
       // Don't fail employee creation if leave balance fails
