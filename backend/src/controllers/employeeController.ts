@@ -108,7 +108,8 @@ export const createEmployee = async (req: AuthRequest, res: Response) => {
     console.error('Error details:', {
       code: error.code,
       meta: error.meta,
-      message: error.message
+      message: error.message,
+      stack: error.stack
     });
     
     // Provide more specific error messages
@@ -128,7 +129,8 @@ export const createEmployee = async (req: AuthRequest, res: Response) => {
     
     res.status(500).json({ 
       error: 'Failed to create employee',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: error.message,
+      code: error.code
     });
   }
 };
