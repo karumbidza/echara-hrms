@@ -138,11 +138,18 @@ export const login = async (req: Request, res: Response) => {
       { expiresIn: '24h' }
     );
 
-    // Extract features from active subscription
+    // Extract features - prioritize tenant features over plan features
     let features: string[] = [];
-    if (user.tenant && user.tenant.subscriptions.length > 0) {
-      const planFeatures = user.tenant.subscriptions[0].plan.features;
-      features = Array.isArray(planFeatures) ? planFeatures.filter((f): f is string => typeof f === 'string') : [];
+    if (user.tenant) {
+      // Check if tenant has custom features assigned
+      if (user.tenant.features && Array.isArray(user.tenant.features)) {
+        features = user.tenant.features.filter((f): f is string => typeof f === 'string');
+      } 
+      // Fall back to plan features if tenant features not set
+      else if (user.tenant.subscriptions.length > 0) {
+        const planFeatures = user.tenant.subscriptions[0].plan.features;
+        features = Array.isArray(planFeatures) ? planFeatures.filter((f): f is string => typeof f === 'string') : [];
+      }
     }
 
     res.json({
@@ -184,6 +191,7 @@ export const getProfile = async (req: Request, res: Response) => {
             id: true,
             name: true,
             subscriptionStatus: true,
+            features: true,
             subscriptions: {
               where: {
                 status: 'ACTIVE'
@@ -206,11 +214,18 @@ export const getProfile = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Extract features from active subscription
+    // Extract features - prioritize tenant features over plan features
     let features: string[] = [];
-    if (user.tenant && user.tenant.subscriptions.length > 0) {
-      const planFeatures = user.tenant.subscriptions[0].plan.features;
-      features = Array.isArray(planFeatures) ? planFeatures.filter((f): f is string => typeof f === 'string') : [];
+    if (user.tenant) {
+      // Check if tenant has custom features assigned
+      if (user.tenant.features && Array.isArray(user.tenant.features)) {
+        features = user.tenant.features.filter((f): f is string => typeof f === 'string');
+      } 
+      // Fall back to plan features if tenant features not set
+      else if (user.tenant.subscriptions.length > 0) {
+        const planFeatures = user.tenant.subscriptions[0].plan.features;
+        features = Array.isArray(planFeatures) ? planFeatures.filter((f): f is string => typeof f === 'string') : [];
+      }
     }
 
     // Add features to tenant object
