@@ -36,9 +36,9 @@ export const getLeaveLiabilityReport = async (req: Request, res: Response) => {
     // Calculate leave liability for each employee
     const liabilityBreakdown = employees.map(employee => {
       const leaveBalance = employee.leaveBalances[0];
-      const accruedDays = leaveBalance?.accruedDays || 0;
-      const usedDays = leaveBalance?.usedDays || 0;
-      const remainingDays = accruedDays - usedDays;
+      const accruedDays = leaveBalance ? parseFloat(leaveBalance.annualTotal.toString()) : 0;
+      const usedDays = leaveBalance ? parseFloat(leaveBalance.annualUsed.toString()) : 0;
+      const remainingDays = leaveBalance ? parseFloat(leaveBalance.annualBalance.toString()) : 0;
 
       // Calculate daily rate (monthly salary / 22 working days)
       const dailyRate = employee.basicSalary / 22;
@@ -164,11 +164,11 @@ export const getStatutoryRemittanceReport = async (req: Request, res: Response) 
           lte: endOfMonth
         },
         status: {
-          in: ['APPROVED', 'PAID']
+          in: ['APPROVED', 'COMPLETED']
         }
       },
       include: {
-        lines: {
+        payslips: {
           include: {
             employee: {
               include: {
@@ -184,8 +184,8 @@ export const getStatutoryRemittanceReport = async (req: Request, res: Response) 
     const departmentBreakdown: Record<string, any> = {};
 
     for (const payrollRun of payrollRuns) {
-      for (const line of payrollRun.lines) {
-        const deptName = line.employee.department?.name || 'Unassigned';
+      for (const payslip of payrollRun.payslips) {
+        const deptName = payslip.employee.department?.name || 'Unassigned';
         
         if (!departmentBreakdown[deptName]) {
           departmentBreakdown[deptName] = {
@@ -196,36 +196,36 @@ export const getStatutoryRemittanceReport = async (req: Request, res: Response) 
             totalNSSAEmployer: 0,
             totalNSSA: 0,
             totalPAYE: 0,
-            currency: line.employee.currency
+            currency: payslip.employee.currency
           };
         }
 
         // Calculate NSSA (4.5% employee + 4.5% employer)
-        let nssaEmployee = line.basicPay * nssaRate.employeeRate;
-        let nssaEmployer = line.basicPay * nssaRate.employerRate;
+        let nssaEmployee = payslip.basicSalary * nssaRate.employeeRate;
+        let nssaEmployer = payslip.basicSalary * nssaRate.employerRate;
 
         // Apply max cap if exists
-        if (nssaRate.maxCap && line.basicPay > nssaRate.maxCap) {
+        if (nssaRate.maxCap && payslip.basicSalary > nssaRate.maxCap) {
           nssaEmployee = nssaRate.maxCap * nssaRate.employeeRate;
           nssaEmployer = nssaRate.maxCap * nssaRate.employerRate;
         }
 
         const totalNSSA = nssaEmployee + nssaEmployer;
 
-        // Get PAYE from line (already calculated)
-        const paye = line.paye || 0;
+        // Get PAYE from payslip (already calculated)
+        const paye = payslip.paye || 0;
 
         departmentBreakdown[deptName].employees.push({
-          employeeNumber: line.employee.employeeNumber,
-          employeeName: `${line.employee.firstName} ${line.employee.lastName}`,
-          grossPay: parseFloat(line.basicPay.toFixed(2)),
+          employeeNumber: payslip.employee.employeeNumber,
+          employeeName: `${payslip.employee.firstName} ${payslip.employee.lastName}`,
+          grossPay: parseFloat(payslip.basicSalary.toFixed(2)),
           nssaEmployee: parseFloat(nssaEmployee.toFixed(2)),
           nssaEmployer: parseFloat(nssaEmployer.toFixed(2)),
           totalNSSA: parseFloat(totalNSSA.toFixed(2)),
           paye: parseFloat(paye.toFixed(2))
         });
 
-        departmentBreakdown[deptName].totalGrossPay += line.basicPay;
+        departmentBreakdown[deptName].totalGrossPay += payslip.basicSalary;
         departmentBreakdown[deptName].totalNSSAEmployee += nssaEmployee;
         departmentBreakdown[deptName].totalNSSAEmployer += nssaEmployer;
         departmentBreakdown[deptName].totalNSSA += totalNSSA;
@@ -329,11 +329,11 @@ export const getDualCurrencyReport = async (req: Request, res: Response) => {
           lte: endOfMonth
         },
         status: {
-          in: ['APPROVED', 'PAID']
+          in: ['APPROVED', 'COMPLETED']
         }
       },
       include: {
-        lines: {
+        payslips: {
           include: {
             employee: {
               include: {
@@ -354,19 +354,19 @@ export const getDualCurrencyReport = async (req: Request, res: Response) => {
     const employeeSet = new Set();
 
     for (const payrollRun of payrollRuns) {
-      for (const line of payrollRun.lines) {
-        const currency = line.employee.currency || 'USD';
-        const empKey = `${line.employeeId}-${currency}`;
+      for (const payslip of payrollRun.payslips) {
+        const currency = payslip.employee.currency || 'USD';
+        const empKey = `${payslip.employeeId}-${currency}`;
         
         if (!employeeSet.has(empKey)) {
           currencyAnalysis[currency].employees++;
           employeeSet.add(empKey);
         }
 
-        currencyAnalysis[currency].totalGross += line.basicPay + (line.allowances || 0);
-        currencyAnalysis[currency].totalNet += line.netPay || 0;
+        currencyAnalysis[currency].totalGross += payslip.grossSalary;
+        currencyAnalysis[currency].totalNet += payslip.netSalary || 0;
 
-        const deptName = line.employee.department?.name || 'Unassigned';
+        const deptName = payslip.employee.department?.name || 'Unassigned';
         if (!currencyAnalysis[currency].departments[deptName]) {
           currencyAnalysis[currency].departments[deptName] = {
             department: deptName,
@@ -375,8 +375,8 @@ export const getDualCurrencyReport = async (req: Request, res: Response) => {
             totalNet: 0
           };
         }
-        currencyAnalysis[currency].departments[deptName].totalGross += line.basicPay + (line.allowances || 0);
-        currencyAnalysis[currency].departments[deptName].totalNet += line.netPay || 0;
+        currencyAnalysis[currency].departments[deptName].totalGross += payslip.grossSalary;
+        currencyAnalysis[currency].departments[deptName].totalNet += payslip.netSalary || 0;
       }
     }
 
