@@ -129,16 +129,19 @@ const TenantSubscription: React.FC = () => {
       });
       
       console.log('Tenant data received:', response.data);
-      setTenant(response.data);
+      const tenantData = response.data.tenant || response.data; // Handle both response formats
+      setTenant(tenantData);
       
       // Set initial selected features from tenant (if set) or active subscription plan
-      if (response.data.features && Array.isArray(response.data.features)) {
+      if (tenantData.features && Array.isArray(tenantData.features)) {
         // Tenant has custom features assigned
-        setSelectedFeatures(response.data.features);
-      } else if (response.data.subscriptions && response.data.subscriptions.length > 0) {
+        console.log('Loading tenant features:', tenantData.features);
+        setSelectedFeatures(tenantData.features);
+      } else if (tenantData.subscriptions && tenantData.subscriptions.length > 0) {
         // Fall back to plan features
-        const activeSubscription = response.data.subscriptions.find((sub: Subscription) => sub.status === 'ACTIVE');
+        const activeSubscription = tenantData.subscriptions.find((sub: Subscription) => sub.status === 'ACTIVE');
         if (activeSubscription && activeSubscription.plan.features) {
+          console.log('Loading plan features:', activeSubscription.plan.features);
           setSelectedFeatures(activeSubscription.plan.features);
         }
       }
