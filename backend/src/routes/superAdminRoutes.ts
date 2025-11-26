@@ -11,7 +11,8 @@ import {
   verifyPayment,
   updateTenantFeatures,
   updateUserRole,
-  createUserFromEmployee
+  createUserFromEmployee,
+  createUser
 } from '../controllers/superAdminController';
 import { authenticateToken } from '../middleware/auth';
 
@@ -27,6 +28,7 @@ router.put('/tenants/:id/status', updateTenantStatus);
 router.put('/tenants/:id/extend-trial', extendTrial);
 router.put('/tenants/:id/features', updateTenantFeatures);
 router.put('/tenants/:id/users/:userId/role', updateUserRole);
+router.post('/tenants/:tenantId/users', createUser);
 router.post('/tenants/:id/employees/:employeeId/create-user', createUserFromEmployee);
 
 // Platform stats

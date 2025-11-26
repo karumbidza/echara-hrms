@@ -496,7 +496,8 @@ export const createUserFromEmployee = async (req: AuthRequest, res: Response) =>
         fullName: `${employee.firstName} ${employee.lastName}`,
         role: role,
         tenantId: tenantId,
-        isActive: true
+        isActive: true,
+        mustChangePassword: true
       }
     });
 
@@ -519,6 +520,84 @@ export const createUserFromEmployee = async (req: AuthRequest, res: Response) =>
   } catch (error) {
     console.error('Error creating user from employee:', error);
     res.status(500).json({ error: 'Failed to create user account' });
+  }
+};
+
+// Create a new user directly (not from employee)
+export const createUser = async (req: AuthRequest, res: Response) => {
+  try {
+    if (req.user?.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Access denied. Super admin only.' });
+    }
+
+    const { tenantId } = req.params;
+    const { email, fullName, role, tempPassword } = req.body;
+
+    // Validate required fields
+    if (!email || !fullName || !role || !tempPassword) {
+      return res.status(400).json({ error: 'Email, full name, role, and temporary password are required' });
+    }
+
+    if (tempPassword.length < 6) {
+      return res.status(400).json({ error: 'Temporary password must be at least 6 characters' });
+    }
+
+    // Validate role
+    const validRoles = ['ADMIN', 'MANAGER', 'PAYROLL_OFFICER', 'GENERAL_MANAGER', 'FINANCE_MANAGER', 'EMPLOYEE'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
+
+    // Verify tenant exists
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId }
+    });
+
+    if (!tenant) {
+      return res.status(404).json({ error: 'Tenant not found' });
+    }
+
+    // Check if email is already in use
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email address is already in use' });
+    }
+
+    // Hash the temporary password
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    // Create user account
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        fullName,
+        role,
+        tenantId,
+        isActive: true,
+        mustChangePassword: true
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        role: true,
+        isActive: true,
+        createdAt: true
+      }
+    });
+
+    res.json({ 
+      message: 'User created successfully',
+      user: newUser,
+      tempPassword: tempPassword // Return temp password for super admin to give to user
+    });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({ error: 'Failed to create user' });
   }
 };
 

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, getProfile } from '../controllers/authController';
+import { register, login, getProfile, changePassword } from '../controllers/authController';
 import { registerCompany } from '../controllers/tenantController';
 import { authenticateToken } from '../middleware/auth';
 import * as bcrypt from 'bcryptjs';
@@ -12,6 +12,7 @@ router.post('/register', register);
 router.post('/register-company', registerCompany);
 router.post('/login', login);
 router.get('/profile', authenticateToken, getProfile);
+router.post('/change-password', authenticateToken, changePassword);
 
 // Temporary endpoint to create super admin
 router.post('/setup-super-admin', async (req, res) => {

@@ -7,6 +7,7 @@ import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ChangePassword from './pages/ChangePassword';
 import Employees from './pages/Employees';
 import EmployeeForm from './pages/EmployeeForm';
 import ViewEmployee from './pages/ViewEmployee';
@@ -41,6 +42,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     return <Navigate to="/login" />;
   }
 
+  // Check if user must change password
+  if (user.mustChangePassword) {
+    return <Navigate to="/change-password" />;
+  }
+
   // Redirect super admin to their dashboard if they try to access tenant routes
   if (user.role === 'SUPER_ADMIN') {
     return <Navigate to="/super-admin" />;
@@ -59,6 +65,11 @@ const SuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
   if (!user) {
     return <Navigate to="/login" />;
+  }
+
+  // Check if user must change password
+  if (user.mustChangePassword) {
+    return <Navigate to="/change-password" />;
   }
 
   // Check if user has SUPER_ADMIN role
@@ -99,6 +110,7 @@ function AppContent() {
             <Route path="/" element={<Landing />} />
             <Route path="/request-quote" element={<RequestQuote />} />
             <Route path="/leave-request/:token" element={<PublicLeaveRequest />} />
+            <Route path="/change-password" element={<ChangePassword />} />
             <Route 
               path="/login" 
               element={

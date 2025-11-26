@@ -9,6 +9,7 @@ interface User {
   fullName: string;
   role: string;
   tenantId: string;
+  mustChangePassword?: boolean;
   tenant?: {
     id: string;
     name: string;
