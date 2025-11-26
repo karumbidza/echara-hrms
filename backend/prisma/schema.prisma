@@ -26,6 +26,9 @@ model Tenant {
   trialEndsAt        DateTime?
   subscriptionEndsAt DateTime?
   
+  // Features (tenant-specific feature overrides)
+  features    Json?    // Array of enabled features for this tenant
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

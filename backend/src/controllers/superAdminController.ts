@@ -379,24 +379,9 @@ export const updateTenantFeatures = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Features must be an array' });
     }
 
-    // Get active subscription
-    const subscription = await prisma.subscription.findFirst({
-      where: {
-        tenantId: id,
-        status: 'ACTIVE'
-      },
-      include: {
-        plan: true
-      }
-    });
-
-    if (!subscription) {
-      return res.status(404).json({ error: 'No active subscription found for this tenant' });
-    }
-
-    // Update plan features
-    const updatedPlan = await prisma.plan.update({
-      where: { id: subscription.planId },
+    // Update tenant features directly
+    const updatedTenant = await prisma.tenant.update({
+      where: { id },
       data: {
         features: features
       }
@@ -404,7 +389,7 @@ export const updateTenantFeatures = async (req: AuthRequest, res: Response) => {
 
     res.json({ 
       message: 'Features updated successfully', 
-      features: updatedPlan.features 
+      features: updatedTenant.features 
     });
   } catch (error) {
     console.error('Error updating tenant features:', error);

@@ -12,4 +12,3 @@ root.render(
     <App />
   </React.StrictMode>
 );
-// Force rebuild Sun Nov 23 22:00:58 CAT 2025

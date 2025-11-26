@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { auth } from '../middleware/auth';
+import { authenticateToken } from '../middleware/auth';
 import {
   getLeaveLiabilityReport,
   getStatutoryRemittanceReport,
@@ -9,7 +9,7 @@ import {
 const router = Router();
 
 // All report routes require authentication
-router.use(auth);
+router.use(authenticateToken);
 
 /**
  * @route   GET /api/reports/leave-liability

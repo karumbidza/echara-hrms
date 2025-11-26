@@ -112,6 +112,33 @@ export const createEmployee = async (req: AuthRequest, res: Response) => {
       tenantId,
       employeeNumber
     };
+    
+    // Parse numeric fields from strings to floats
+    const numericFields = [
+      'basicSalary',
+      'defaultHousingAllowance',
+      'defaultTransportAllowance',
+      'defaultMealAllowance',
+      'defaultOtherAllowances',
+      'defaultPensionContribution',
+      'defaultMedicalAid',
+      'defaultMonthlyLeaveRate'
+    ];
+    
+    numericFields.forEach(field => {
+      if (dataToCreate[field] !== undefined && dataToCreate[field] !== null && dataToCreate[field] !== '') {
+        dataToCreate[field] = parseFloat(dataToCreate[field]);
+      }
+    });
+    
+    // Parse boolean fields
+    if (dataToCreate.isActive !== undefined) {
+      dataToCreate.isActive = dataToCreate.isActive === 'true' || dataToCreate.isActive === true;
+    }
+    
+    if (dataToCreate.noticeGiven !== undefined) {
+      dataToCreate.noticeGiven = dataToCreate.noticeGiven === 'true' || dataToCreate.noticeGiven === true;
+    }
 
     const employee = await prisma.employee.create({
       data: dataToCreate,
@@ -253,10 +280,39 @@ export const updateEmployee = async (req: AuthRequest, res: Response) => {
     // Sanitize data - remove fields that shouldn't be updated
     const { employeeNumber, createdAt, updatedAt, ...updateData } = employeeData;
 
+    // Parse numeric fields from strings to floats
+    const parsedData: any = { ...updateData };
+    
+    const numericFields = [
+      'basicSalary',
+      'defaultHousingAllowance',
+      'defaultTransportAllowance',
+      'defaultMealAllowance',
+      'defaultOtherAllowances',
+      'defaultPensionContribution',
+      'defaultMedicalAid',
+      'defaultMonthlyLeaveRate'
+    ];
+    
+    numericFields.forEach(field => {
+      if (parsedData[field] !== undefined && parsedData[field] !== null && parsedData[field] !== '') {
+        parsedData[field] = parseFloat(parsedData[field]);
+      }
+    });
+    
+    // Parse boolean fields
+    if (parsedData.isActive !== undefined) {
+      parsedData.isActive = parsedData.isActive === 'true' || parsedData.isActive === true;
+    }
+    
+    if (parsedData.noticeGiven !== undefined) {
+      parsedData.noticeGiven = parsedData.noticeGiven === 'true' || parsedData.noticeGiven === true;
+    }
+
     const employee = await prisma.employee.updateMany({
       where: { id, tenantId },
       data: {
-        ...updateData,
+        ...parsedData,
         ...filePaths
       }
     });
