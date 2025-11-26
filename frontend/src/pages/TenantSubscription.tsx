@@ -115,6 +115,14 @@ const TenantSubscription: React.FC = () => {
   const [generatedPassword, setGeneratedPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  // Create standalone user modal
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserFullName, setNewUserFullName] = useState('');
+  const [newUserRoleStandalone, setNewUserRoleStandalone] = useState('EMPLOYEE');
+  const [newUserTempPassword, setNewUserTempPassword] = useState('');
+  const [createdUserPassword, setCreatedUserPassword] = useState('');
+
   useEffect(() => {
     fetchTenantDetails();
   }, [id]);
@@ -266,6 +274,68 @@ const TenantSubscription: React.FC = () => {
     }
   };
 
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  };
+
+  const handleAddUser = async () => {
+    setError(null);
+    setSuccess(null);
+    
+    if (!newUserEmail || !newUserFullName || !newUserTempPassword) {
+      setError('All fields are required');
+      return;
+    }
+
+    if (newUserTempPassword.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `${API_URL}/super-admin/tenants/${id}/users`,
+        {
+          email: newUserEmail,
+          fullName: newUserFullName,
+          role: newUserRoleStandalone,
+          tempPassword: newUserTempPassword
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      setCreatedUserPassword(response.data.tempPassword);
+      setSuccess(`User ${newUserFullName} created successfully! Temporary password: ${response.data.tempPassword}`);
+      
+      // Reset form
+      setNewUserEmail('');
+      setNewUserFullName('');
+      setNewUserRoleStandalone('EMPLOYEE');
+      setNewUserTempPassword('');
+      
+      // Refresh tenant details
+      fetchTenantDetails();
+      
+      // Keep modal open to show password
+      setTimeout(() => {
+        setShowAddUserModal(false);
+        setCreatedUserPassword('');
+      }, 10000); // Close after 10 seconds
+      
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to create user');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <Container className="mt-4 text-center">
@@ -386,8 +456,15 @@ const TenantSubscription: React.FC = () => {
         {/* User Management Section */}
         <Col md={4}>
           <Card>
-            <Card.Header className="bg-info text-white">
+            <Card.Header className="bg-info text-white d-flex justify-content-between align-items-center">
               <h5 className="mb-0">👥 Employee & User Management</h5>
+              <Button 
+                variant="light" 
+                size="sm"
+                onClick={() => setShowAddUserModal(true)}
+              >
+                ➕ Add User
+              </Button>
             </Card.Header>
             <Card.Body>
               <p className="small text-muted">
@@ -632,6 +709,124 @@ const TenantSubscription: React.FC = () => {
               setShowCreateUserModal(false);
               setGeneratedPassword('');
               setTempPassword('');
+            }}>
+              Done
+            </Button>
+          )}
+        </Modal.Footer>
+      </Modal>
+
+      {/* Add Standalone User Modal */}
+      <Modal show={showAddUserModal} onHide={() => setShowAddUserModal(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>➕ Add New User</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {createdUserPassword ? (
+            <Alert variant="success">
+              <Alert.Heading>✅ User Created Successfully!</Alert.Heading>
+              <p className="mb-0">
+                <strong>Temporary Password:</strong>{' '}
+                <code style={{ fontSize: '1.1rem', padding: '5px 10px', backgroundColor: '#e7f3e7' }}>
+                  {createdUserPassword}
+                </code>
+              </p>
+              <p className="mt-3 mb-0 small">
+                ⚠️ Save this password now! It will not be shown again. The user must change it on first login.
+              </p>
+            </Alert>
+          ) : (
+            <>
+              <Form>
+                <Form.Group className="mb-3">
+                  <Form.Label>Full Name *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="e.g., John Doe"
+                    value={newUserFullName}
+                    onChange={(e) => setNewUserFullName(e.target.value)}
+                    required
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Email Address *</Form.Label>
+                  <Form.Control
+                    type="email"
+                    placeholder="user@example.com"
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                    required
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Role *</Form.Label>
+                  <Form.Select
+                    value={newUserRoleStandalone}
+                    onChange={(e) => setNewUserRoleStandalone(e.target.value)}
+                  >
+                    {ROLES.map(role => (
+                      <option key={role.value} value={role.value}>
+                        {role.label}
+                      </option>
+                    ))}
+                  </Form.Select>
+                  <Form.Text className="text-muted">
+                    {newUserRoleStandalone === 'ADMIN' && 'Full system access, user management'}
+                    {newUserRoleStandalone === 'MANAGER' && 'Leave approvals, contract management'}
+                    {newUserRoleStandalone === 'GENERAL_MANAGER' && 'Payroll approvals, reporting'}
+                    {newUserRoleStandalone === 'FINANCE_MANAGER' && 'Payroll approvals, financial reports'}
+                    {newUserRoleStandalone === 'PAYROLL_OFFICER' && 'Payroll processing and management'}
+                    {newUserRoleStandalone === 'EMPLOYEE' && 'Basic access, self-service'}
+                  </Form.Text>
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Temporary Password *</Form.Label>
+                  <div className="d-flex gap-2">
+                    <Form.Control
+                      type="text"
+                      placeholder="Enter temporary password (min 6 characters)"
+                      value={newUserTempPassword}
+                      onChange={(e) => setNewUserTempPassword(e.target.value)}
+                      required
+                      minLength={6}
+                    />
+                    <Button
+                      variant="outline-secondary"
+                      onClick={() => setNewUserTempPassword(generateRandomPassword())}
+                      title="Generate random password"
+                    >
+                      🎲
+                    </Button>
+                  </div>
+                  <Form.Text className="text-muted">
+                    User will be required to change this password on first login
+                  </Form.Text>
+                </Form.Group>
+              </Form>
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          {!createdUserPassword ? (
+            <>
+              <Button variant="secondary" onClick={() => setShowAddUserModal(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleAddUser}
+                disabled={saving || !newUserEmail || !newUserFullName || !newUserTempPassword || newUserTempPassword.length < 6}
+              >
+                {saving ? <Spinner animation="border" size="sm" /> : 'Create User'}
+              </Button>
+            </>
+          ) : (
+            <Button variant="success" onClick={() => {
+              setShowAddUserModal(false);
+              setCreatedUserPassword('');
             }}>
               Done
             </Button>
